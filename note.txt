@@ -1,0 +1,44 @@
+-- using elastic client
+fetch('/eval', { method: 'post', body: 'content=client.Cat.Indices()', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=client.Cat.Nodes()', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=client.Cat.Shards()', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=client.Cluster.Health()', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+-- using static class
+
+fetch('/eval', { method: 'post', body: 'content=helper.GetDoc("1", "articles")', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.GetIndice("articles")', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.json()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.IndexExists().Result', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.text()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.IndexExists("test").Result', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.text()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.DeleteIndex().Result', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.text()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.InitIndex().Result', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.text()).then(res=>console.log(res))
+
+fetch('/eval', { method: 'post', body: 'content=helper.GetDocCount()', headers: { 'content-type':'application/x-www-form-urlencoded' } }).then(res=>res.text()).then(res=>console.log(res))
+
+
+fetch('/api/articles', { method: 'post', body: JSON.stringify({ "id":1, "title":"How Y’all, Youse and You Guys Talk","content":"",
+"published_on":"2013-12-20T00:00:00","created_at":"2021-10-12T09:54:13.117856",
+"updated_at":"2021-10-12T09:54:13.117856",
+"abstract":"What does the way you speak say about where you’re from? Answer the questions to see your personal dialect map.",
+"url":"http://www.nytimes.com/interactive/2013/12/20/sunday-review/dialect-quiz-map.html","shares":1,"comments":[],
+"categories":[{"id":1},{"id":10}],
+"authors":[{"id":1},{"id":10}] }), headers: { 'content-type':'application/json' }  }).then(res=>res.text()).then(res=>console.log(res))
+
+
+fetch('/api/articles/3', { method: 'put', body: JSON.stringify({ "id":1, "title":"How Y’all, Youse and You Guys Talk","content":"",
+"published_on":"2013-12-20T00:00:00","created_at":"2021-10-12T09:54:13.117856",
+"updated_at":"2021-10-12T09:54:13.117856",
+"abstract":"What does the way you speak say about where you’re from? Answer the questions to see your personal dialect map.",
+"url":"http://www.nytimes.com/interactive/2013/12/20/sunday-review/dialect-quiz-map.html","shares":1,"comments":[],
+"categories":[{"id":1},{"id":10}],
+"authors":[{"id":1},{"id":10}] }), headers: { 'content-type':'application/json' }  }).then(res=>res.text()).then(res=>console.log(res))
+
+fetch('/api/articles/10/delete').then(res=>res.text()).then(res=>console.log(res))

@@ -1,0 +1,106 @@
+{
+  "mappings": {
+    "_doc": {
+      "properties": {
+        "abstract": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "authors": {
+          "properties": {
+            "full_name": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        },
+        "categories": {
+          "type": "keyword"
+        },
+        "comments": {
+          "type": "nested",
+          "properties": {
+            "body": {
+              "type": "text",
+              "analyzer": "snowball"
+            },
+            "pick": {
+              "type": "text"
+            },
+            "stars": {
+              "type": "text"
+            },
+            "user": {
+              "type": "keyword"
+            },
+            "user_location": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        },
+        "content": {
+          "type": "text",
+          "fields": {
+            "tokenized": {
+              "type": "text",
+              "analyzer": "simple"
+            }
+          }
+        },
+        "created_at": {
+          "type": "date"
+        },
+        "id": {
+          "type": "long"
+        },
+        "published_on": {
+          "type": "date"
+        },
+        "shares": {
+          "type": "long"
+        },
+        "title": {
+          "type": "text",
+          "fields": {
+            "tokenized": {
+              "type": "text",
+              "analyzer": "simple"
+            }
+          }
+        },
+        "updated_at": {
+          "type": "date"
+        },
+        "url": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "0"
+    }
+  }
+}
