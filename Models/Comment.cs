@@ -5,9 +5,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 #nullable enable
-
 namespace elasticsearch_netcore.Models
 {
+    #nullable disable
     [Table("comments")]
     [Index(nameof(ArticleId), Name = "index_comments_on_article_id")]
     public partial class Comment
@@ -15,8 +15,10 @@ namespace elasticsearch_netcore.Models
         [Key]
         [Column("id", TypeName = "integer")]
         public long Id { get; set; }
+        #nullable enable
         [Column("body", TypeName = "text")]
         public string? Body { get; set; }
+        #nullable disable
         [Column("user", TypeName = "varchar")]
         public string User { get; set; } = null!;
         [Column("user_location", TypeName = "varchar")]

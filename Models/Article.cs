@@ -5,9 +5,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 
 #nullable enable
-
 namespace elasticsearch_netcore.Models
 {
+    #nullable disable
     [Table("articles")]
     public partial class Article
     {
@@ -33,10 +33,12 @@ namespace elasticsearch_netcore.Models
         public DateTime? CreatedAt { get; set; } = DateTime.Now;
         [Column("updated_at", TypeName = "datetime")]
         public DateTime? UpdatedAt { get; set; } = DateTime.Now;
+#nullable enable
         [Column("abstract", TypeName = "text")]
         public string? Abstract { get; set; }
         [Column("url", TypeName = "varchar")]
         public string? Url { get; set; }
+#nullable disable
         [Column("shares", TypeName = "integer")]
         public long? Shares { get; set; }
 
