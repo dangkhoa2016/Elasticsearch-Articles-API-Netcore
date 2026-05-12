@@ -22,7 +22,7 @@ namespace elasticsearch_netcore
                .AddEnvironmentVariables()
                .Build();
 
-        public static void Main(string[] args)
+        public static async System.Threading.Tasks.Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -39,12 +39,12 @@ namespace elasticsearch_netcore
                 //TestCode(host);
 
                 var helper = (Helpers.Helper)host.Services.GetService(typeof(Helpers.Helper));
-                helper.InitIndex().Wait();
+                await helper.InitIndex();
 
                 // import
-                //RunBulkIndex(host);
+                //await RunBulkIndex(host);
 
-                host.Run();
+                await host.RunAsync();
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace elasticsearch_netcore
 
         }
 
-        static void RunBulkIndex(IHost host)
+        static async System.Threading.Tasks.Task RunBulkIndex(IHost host)
         {
             var serviceScopeFactory = (IServiceScopeFactory)host.Services.GetService(typeof(IServiceScopeFactory));
 
@@ -125,7 +125,7 @@ namespace elasticsearch_netcore
             {
                 var services = scope.ServiceProvider;
                 var articleRepository = services.GetRequiredService<IArticleRepository>();
-                articleRepository.BulkIndex().Wait();
+                await articleRepository.BulkIndex();
             }
         }
 

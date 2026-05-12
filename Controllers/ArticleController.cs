@@ -155,7 +155,7 @@ namespace elasticsearch_netcore.Controllers
         }
 
 
-        static void RunBulkIndex(IServiceScopeFactory serviceScopeFactory)
+        static async System.Threading.Tasks.Task RunBulkIndex(IServiceScopeFactory serviceScopeFactory)
         {
             if (serviceScopeFactory == null)
             {
@@ -167,7 +167,7 @@ namespace elasticsearch_netcore.Controllers
             {
                 var services = scope.ServiceProvider;
                 var articleRepository = services.GetRequiredService<IArticleRepository>();
-                articleRepository.BulkIndex().Wait();
+                await articleRepository.BulkIndex();
             }
         }
 
@@ -182,7 +182,7 @@ namespace elasticsearch_netcore.Controllers
                 _logger.LogInformation($"Starting import at {startAt}");
                 await _worker.QueueBackgroundWorkItemAsync(async token =>
                 {
-                    RunBulkIndex((IServiceScopeFactory)HttpContext.RequestServices.GetService(typeof(IServiceScopeFactory)));
+                    await RunBulkIndex((IServiceScopeFactory)HttpContext.RequestServices.GetService(typeof(IServiceScopeFactory)));
                     _logger.LogInformation($"Done import at {DateTime.UtcNow.TimeOfDay}");
                 });
 
