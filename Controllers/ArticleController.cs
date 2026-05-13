@@ -132,6 +132,11 @@ namespace elasticsearch_netcore.Controllers
 
                 return record;
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error in UpdateArticle: {Message}", ex.Message);
+                return BadRequest(new { error = "ValidationError", message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateArticle");
@@ -153,6 +158,11 @@ namespace elasticsearch_netcore.Controllers
                     return UnprocessableEntity();
 
                 return CreatedAtAction("GetArticle", new { id = record.Id }, record);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error in CreateArticle: {Message}", ex.Message);
+                return BadRequest(new { error = "ValidationError", message = ex.Message });
             }
             catch (Exception ex)
             {

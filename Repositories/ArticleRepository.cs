@@ -118,6 +118,11 @@ namespace elasticsearch_netcore.Repositories
         {
             if (db != null)
             {
+                if (string.IsNullOrWhiteSpace(article?.Title))
+                    throw new ArgumentException("Title is required.", nameof(article.Title));
+                if (string.IsNullOrWhiteSpace(article?.Content))
+                    throw new ArgumentException("Content is required.", nameof(article.Content));
+
                 var record = new Article();
                 record.Title = article.Title;
                 record.Content = article.Content;
@@ -145,6 +150,11 @@ namespace elasticsearch_netcore.Repositories
         {
             if (db != null && article != null && id > 0)
             {
+                if (string.IsNullOrWhiteSpace(article?.Title))
+                    throw new ArgumentException("Title is required.", nameof(article.Title));
+                if (string.IsNullOrWhiteSpace(article?.Content))
+                    throw new ArgumentException("Content is required.", nameof(article.Content));
+
                 var found = await db.Articles.Include(a => a.ArticlesCategories).Include(a => a.Authorships).FirstOrDefaultAsync(a => a.Id == id);
                 if (found != null)
                 {

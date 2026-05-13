@@ -12,6 +12,8 @@ using elasticsearch_netcore.Extensions;
 using elasticsearch_netcore.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace elasticsearch_netcore
 {
@@ -89,6 +91,9 @@ namespace elasticsearch_netcore
             services.AddScoped<IAuthorshipRepository, AuthorshipRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
+
+            services.AddFluentValidationAutoValidation();
+            services.AddValidatorsFromAssemblyContaining<Startup>();
 
             services.AddControllers();
         }
