@@ -9,11 +9,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace elasticsearch_netcore.Controllers
 {
     [Route("api/")]
     [ApiController]
+    [Authorize]
     public class CategoryController : ControllerBase
     {
         private ICategoryRepository categoryRepository;

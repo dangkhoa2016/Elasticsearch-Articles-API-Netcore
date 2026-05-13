@@ -1,14 +1,17 @@
 using System;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using elasticsearch_netcore.Repositories;
-using elasticsearch_netcore.Models;
+using elasticsearch_netcore.Middleware;
 using Serilog;
 using elasticsearch_netcore.Extensions;
 using elasticsearch_netcore.Helpers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 namespace elasticsearch_netcore
 {
@@ -46,6 +49,31 @@ namespace elasticsearch_netcore
 
             services.AddElasticsearch(Configuration);
             services.AddSingleton<Helpers.Helper>();
+
+            services.AddSingleton<Services.TokenService>();
+
+            var jwtSecret = Configuration["JwtSettings:Secret"];
+            var jwtIssuer = Configuration["JwtSettings:Issuer"];
+            var jwtAudience = Configuration["JwtSettings:Audience"];
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                };
+            });
 
             services.AddHostedService<LongRunningService>();
             services.AddSingleton<IBackgroundWorkerQueue>(sp =>
@@ -89,7 +117,10 @@ namespace elasticsearch_netcore
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<ValidationKeyTransformMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

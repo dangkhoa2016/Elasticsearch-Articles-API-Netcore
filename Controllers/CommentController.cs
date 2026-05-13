@@ -6,11 +6,13 @@ using Newtonsoft.Json;
 using System;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace elasticsearch_netcore.Controllers
 {
     [Route("api/")]
     [ApiController]
+    [Authorize]
     public class CommentController : ControllerBase
     {
         private ICommentRepository commentRepository;

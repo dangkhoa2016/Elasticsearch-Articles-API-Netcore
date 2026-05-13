@@ -35,6 +35,7 @@ namespace elasticsearch_netcore.Models
         public virtual DbSet<Authorship> Authorships { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<Comment> Comments { get; set; }
+        public virtual DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -58,9 +59,9 @@ namespace elasticsearch_netcore.Models
                     .OnDelete(DeleteBehavior.ClientSetNull);
 
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValue(DateTime.Now);
+                    .HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValue(DateTime.Now);
+                    .HasDefaultValueSql("datetime('now')");
             });
 
             modelBuilder.Entity<ArticlesCategory>(entity =>

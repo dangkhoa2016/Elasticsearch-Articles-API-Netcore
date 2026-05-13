@@ -11,11 +11,13 @@ using Newtonsoft.Json.Linq;
 using elasticsearch_netcore.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authorization;
 
 namespace elasticsearch_netcore.Controllers
 {
     [Route("api/")]
     [ApiController]
+    [Authorize]
     public class ArticleController : ControllerBase
     {
         private IArticleRepository articleRepository;
