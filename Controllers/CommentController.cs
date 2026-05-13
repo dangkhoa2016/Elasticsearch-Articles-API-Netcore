@@ -1,6 +1,7 @@
-﻿using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Repositories;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Net.Mime;
@@ -13,10 +14,12 @@ namespace elasticsearch_netcore.Controllers
     public class CommentController : ControllerBase
     {
         private ICommentRepository commentRepository;
+        private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepository commentRepository)
+        public CommentController(ICommentRepository commentRepository, ILogger<CommentController> logger)
         {
             this.commentRepository = commentRepository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -32,9 +35,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetComments: skip={Skip}, take={Take}", skip, take);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve comments. Please try again later." });
             }
         }
 
@@ -50,9 +54,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(CommentRepository.ConvertToJObject(record, loadRelation).ToString(Formatting.None), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetComment: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve comment. Please try again later." });
             }
         }
 
@@ -64,9 +69,10 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await commentRepository.DeleteComment(id);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in DeleteComment: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete comment. Please try again later." });
             }
         }
 
@@ -85,9 +91,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return comment;
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in UpdateComment");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update comment. Please try again later." });
             }
         }
 
@@ -101,9 +108,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetComment", new { id = comment.Id }, comment);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in CreateComment");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create comment. Please try again later." });
             }
         }
     }

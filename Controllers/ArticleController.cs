@@ -53,9 +53,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetArticles: skip={Skip}, take={Take}, title={Title}", skip, take, title);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve articles. Please try again later." });
             }
         }
 
@@ -73,9 +74,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(article.ToString(Formatting.None), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetArticle: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve article. Please try again later." });
             }
         }
 
@@ -100,9 +102,10 @@ namespace elasticsearch_netcore.Controllers
                 return Content(JsonConvert.SerializeObject(new { msg = "Article with id:[" + id + "] has been deleted." }),
                     MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in DeleteArticle: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete article. Please try again later." });
             }
         }
 
@@ -127,9 +130,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return record;
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in UpdateArticle");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update article. Please try again later." });
             }
         }
 
@@ -148,9 +152,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetArticle", new { id = record.Id }, record);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in CreateArticle");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create article. Please try again later." });
             }
         }
 
@@ -189,9 +194,10 @@ namespace elasticsearch_netcore.Controllers
                 return Content(JsonConvert.SerializeObject(new { msg = $"Bulk import starting in the background... at {startAt}" }),
                   MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in Import");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to start bulk import. Please try again later." });
             }
         }
 

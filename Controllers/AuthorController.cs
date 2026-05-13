@@ -1,6 +1,7 @@
-﻿using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Repositories;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -14,10 +15,12 @@ namespace elasticsearch_netcore.Controllers
     public class AuthorController : ControllerBase
     {
         private IAuthorRepository authorRepository;
+        private readonly ILogger<AuthorController> _logger;
 
-        public AuthorController(IAuthorRepository authorRepository)
+        public AuthorController(IAuthorRepository authorRepository, ILogger<AuthorController> logger)
         {
             this.authorRepository = authorRepository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -27,21 +30,16 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                /*
-                var records = await authorRepository.GetAuthors(skip, take,
-                    //a => (a.FirstName + " " + a.LastName).Contains(name) -> match case sensitive
-                    a => (a.FirstName + " " + a.LastName).ToLower().Contains(name.ToLower())
-                    );
-                */
                 var records = await authorRepository.GetAuthors(skip, take, name, showTotal);
                 if (records == null)
                     return NotFound();
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetAuthors: skip={Skip}, take={Take}, name={Name}", skip, take, name);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve authors. Please try again later." });
             }
         }
 
@@ -57,9 +55,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Ok(record);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetAuthor: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve author. Please try again later." });
             }
         }
 
@@ -83,9 +82,10 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await authorRepository.DeleteAuthor(id);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in DeleteAuthor: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete author. Please try again later." });
             }
         }
 
@@ -107,9 +107,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return author;
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in UpdateAuthor");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update author. Please try again later." });
             }
         }
 
@@ -126,9 +127,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in CreateAuthor");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create author. Please try again later." });
             }
         }
 

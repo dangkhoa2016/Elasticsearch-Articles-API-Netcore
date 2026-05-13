@@ -123,7 +123,7 @@ namespace elasticsearch_netcore.Helpers
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Error index document: " + ex.Message);
+                _logger.LogError(ex, "Error index document: {Id}", Id);
             }
         }
 
@@ -146,7 +146,7 @@ namespace elasticsearch_netcore.Helpers
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Error remove document: " + ex.Message);
+                _logger.LogError(ex, "Error remove document: {Id}", Id);
             }
         }
 
@@ -180,7 +180,7 @@ namespace elasticsearch_netcore.Helpers
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Error bulk index document: " + ex.Message);
+                _logger.LogError(ex, "Error bulk index document: {Count} documents", jsonList.Count);
             }
 
             return false;

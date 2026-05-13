@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DynamicExpresso.Core" Version="2.19.1" />
     <PackageReference Include="Elastic.Transport" Version="0.4.22" />
     <PackageReference Include="Elasticsearch.Net" Version="7.17.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />

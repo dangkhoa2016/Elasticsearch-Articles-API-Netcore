@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -25,10 +26,11 @@ namespace elasticsearch_netcore
         {
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
+                var allowedOrigins = Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
                 builder
-                .AllowAnyOrigin()
-                .AllowAnyHeader()
-                .AllowAnyMethod();
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
             }));
 
             services
@@ -59,20 +61,14 @@ namespace elasticsearch_netcore
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // if (env.IsDevelopment())
-            // {
-            //     app.UseDeveloperExceptionPage();
-            // }
+            app.UseMiddleware<Middleware.ExceptionHandlingMiddleware>();
 
-            //Handle 500 errors
-            app.UseExceptionHandler("/500");
             //Handle 404 errors
             app.Use(async (ctx, next) =>
             {
                 await next();
                 if (ctx.Response.StatusCode == 404 && !ctx.Response.HasStarted)
                 {
-                    //Re-execute the request so the user gets the error page
                     ctx.Request.Path = "/404";
                     await next();
                 }

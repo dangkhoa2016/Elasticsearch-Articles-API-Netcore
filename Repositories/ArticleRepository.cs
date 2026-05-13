@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Nest;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Microsoft.Data.Sqlite;
 
 namespace elasticsearch_netcore.Repositories
 {
@@ -84,10 +83,7 @@ namespace elasticsearch_netcore.Repositories
                 if (string.IsNullOrWhiteSpace(title))
                     table = db.Articles.AsNoTracking();
                 else
-                {
-                    var titleParam = new SqliteParameter("@title", string.Format("%{0}%", title));
-                    table = db.Articles.FromSqlRaw("select * from articles WHERE title LIKE @title", titleParam);
-                }
+                    table = db.Articles.AsNoTracking().Where(a => a.Title.Contains(title));
 
                 if (loadRelation)
                 {

@@ -1,6 +1,7 @@
-﻿using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Repositories;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -16,10 +17,12 @@ namespace elasticsearch_netcore.Controllers
     public class CategoryController : ControllerBase
     {
         private ICategoryRepository categoryRepository;
+        private readonly ILogger<CategoryController> _logger;
 
-        public CategoryController(ICategoryRepository categoryRepository)
+        public CategoryController(ICategoryRepository categoryRepository, ILogger<CategoryController> logger)
         {
             this.categoryRepository = categoryRepository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -35,9 +38,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetCategories: skip={Skip}, take={Take}, title={Title}", skip, take, title);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve categories. Please try again later." });
             }
         }
 
@@ -65,9 +69,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return Ok(record);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in GetCategory: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve category. Please try again later." });
             }
         }
 
@@ -79,9 +84,10 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await categoryRepository.DeleteCategory(id);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in DeleteCategory: id={Id}", id);
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete category. Please try again later." });
             }
         }
 
@@ -100,9 +106,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return category;
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in UpdateCategory");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update category. Please try again later." });
             }
         }
 
@@ -116,9 +123,10 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetCategory", new { id = category.Id }, category);
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest();
+                _logger.LogError(ex, "Error in CreateCategory");
+                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create category. Please try again later." });
             }
         }
     }
