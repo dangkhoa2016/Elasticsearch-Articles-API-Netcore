@@ -70,14 +70,11 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray authors = new JArray();
 
-                IQueryable<Author> table = null;
+                IQueryable<Author> table = db.Authors.AsNoTracking();
 
-                if (string.IsNullOrWhiteSpace(name))
-                    table = db.Authors.AsNoTracking();
-                else
+                if (!string.IsNullOrWhiteSpace(name))
                 {
-                    var nameParam = new SqliteParameter("@name", string.Format("%{0}%", name));
-                    table = db.Authors.FromSqlRaw("select * from authors WHERE (first_name  || ' ' || last_name) LIKE @name", nameParam);
+                    table = table.Where(a => (a.FirstName + " " + a.LastName).Contains(name));
                 }
 
                 var records = await table.OrderBy(a => a.FirstName).ThenBy(a => a.LastName).ThenBy(a => a.CreatedAt)
@@ -169,16 +166,11 @@ namespace elasticsearch_netcore.Repositories
                     take = 10;
 
                 JArray articles = new JArray();
-                IQueryable<Authorship> table = null;
+                IQueryable<Authorship> table = db.Authorships.AsNoTracking().Where(a => a.AuthorId == id);
 
-                if (string.IsNullOrWhiteSpace(title))
-                    table = db.Authorships.AsNoTracking().Where(a => a.AuthorId == id);
-                else
+                if (!string.IsNullOrWhiteSpace(title))
                 {
-                    var titleParam = new SqliteParameter("@title", string.Format("%{0}%", title));
-                    var authorParam = new SqliteParameter("@authorId", id);
-                    table = db.Authorships.FromSqlRaw("select * from authorships where author_id = @authorId and " +
-                        "article_id in (select id from articles WHERE title LIKE @title)", titleParam, authorParam);
+                    table = table.Where(a => a.Article.Title.Contains(title));
                 }
 
                 if (loadRelation)

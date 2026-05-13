@@ -69,14 +69,11 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray categories = new JArray();
 
-                IQueryable<Category> table = null;
+                IQueryable<Category> table = db.Categories.AsNoTracking();
 
-                if (string.IsNullOrWhiteSpace(title))
-                    table = db.Categories.AsNoTracking();
-                else
+                if (!string.IsNullOrWhiteSpace(title))
                 {
-                    var titleParam = new SqliteParameter("@title", string.Format("%{0}%", title));
-                    table = db.Categories.FromSqlRaw("select * from categories WHERE title LIKE @title", titleParam);
+                    table = table.Where(c => c.Title.Contains(title));
                 }
 
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
@@ -165,16 +162,11 @@ namespace elasticsearch_netcore.Repositories
                     take = 10;
 
                 JArray articles = new JArray();
-                IQueryable<ArticlesCategory> table = null;
+                IQueryable<ArticlesCategory> table = db.ArticlesCategories.AsNoTracking().Where(a => a.CategoryId == id);
 
-                if (string.IsNullOrWhiteSpace(title))
-                    table = db.ArticlesCategories.AsNoTracking().Where(a => a.CategoryId == id);
-                else
+                if (!string.IsNullOrWhiteSpace(title))
                 {
-                    var titleParam = new SqliteParameter("@title", string.Format("%{0}%", title));
-                    var categoryParam = new SqliteParameter("@categoryId", id);
-                    table = db.ArticlesCategories.FromSqlRaw("select * from articles_categories where category_id = @categoryId and " +
-                        "article_id in (select id from articles WHERE title LIKE @title)", titleParam, categoryParam);
+                    table = table.Where(ac => ac.Article.Title.Contains(title));
                 }
 
                 if (loadRelation)
