@@ -27,10 +27,17 @@ namespace elasticsearch_netcore
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
                 var allowedOrigins = Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+                
+                if (allowedOrigins.Length == 0)
+                {
+                    throw new InvalidOperationException("AllowedOrigins must be configured in appsettings.json");
+                }
+
                 builder
                     .WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             }));
 
             services
