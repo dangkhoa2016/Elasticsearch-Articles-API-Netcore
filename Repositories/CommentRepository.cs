@@ -33,7 +33,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var table = db.Comments.AsQueryable().AsNoTracking();
                 if (loadRelation)
-                    table = table.Include(a => a.Article);
+                    table = table.Include(a => a.Article).AsSplitQuery();
 
                 if (filter != null)
                     table = table.Where(filter);
@@ -108,7 +108,7 @@ namespace elasticsearch_netcore.Repositories
             {
                 var table = db.Comments.AsQueryable().AsNoTracking();
                 if (loadRelation)
-                    table = table.Include(a => a.Article);
+                    table = table.Include(a => a.Article).AsSplitQuery();
 
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)

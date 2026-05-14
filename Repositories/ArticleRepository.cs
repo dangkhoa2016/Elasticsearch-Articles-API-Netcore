@@ -81,7 +81,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Authorships).ThenInclude(a => a.Author)
-                                .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category);
+                                .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category)
+                                .AsSplitQuery();
                 }
 
                 if (filter != null)
@@ -94,7 +95,12 @@ namespace elasticsearch_netcore.Repositories
 
                 dynamic result;
                 if (showTotal)
-                    result = new { data = articles, total = await table.CountAsync() };
+                {
+                    var countQuery = db.Articles.AsNoTracking();
+                    if (filter != null)
+                        countQuery = countQuery.Where(filter);
+                    result = new { data = articles, total = await countQuery.CountAsync() };
+                }
                 else
                     result = articles;
 
@@ -129,8 +135,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Authorships).ThenInclude(a => a.Author)
-                                .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category);
-                    //.Include(a => a.Comments);
+                                .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category)
+                                .AsSplitQuery();
                 }
 
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
@@ -139,7 +145,12 @@ namespace elasticsearch_netcore.Repositories
                     articles.Add(ConvertToJObject(new ArticleViewModel(r, true), loadRelation, ForPage.All));
 
                 if (showTotal)
-                    return new { data = articles, total = await table.CountAsync() };
+                {
+                    var countQuery = db.Articles.AsNoTracking();
+                    if (!string.IsNullOrWhiteSpace(title))
+                        countQuery = countQuery.Where(a => a.Title.Contains(title));
+                    return new { data = articles, total = await countQuery.CountAsync() };
+                }
                 else
                     return articles;
             }
@@ -244,7 +255,8 @@ namespace elasticsearch_netcore.Repositories
                 {
                     table = table.Include(a => a.Authorships).ThenInclude(a => a.Author)
                                 .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category)
-                                .Include(a => a.Comments);
+                                .Include(a => a.Comments)
+                                .AsSplitQuery();
                 }
 
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);
@@ -277,8 +289,9 @@ namespace elasticsearch_netcore.Repositories
                     db.Articles.Remove(new Article() { Id = id });
                     await db.SaveChangesAsync();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error deleting article {ArticleId}", id);
                 }
 
                 await _helper.RemoveIndexDocument(id.ToString());

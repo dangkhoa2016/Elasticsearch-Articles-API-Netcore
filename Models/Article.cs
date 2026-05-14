@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 #nullable enable
@@ -9,6 +10,8 @@ namespace elasticsearch_netcore.Models
 {
     #nullable disable
     [Table("articles")]
+    [Index(nameof(Title), Name = "index_articles_on_title")]
+    [Index(nameof(CreatedAt), Name = "index_articles_on_created_at")]
     public partial class Article
     {
         public Article()

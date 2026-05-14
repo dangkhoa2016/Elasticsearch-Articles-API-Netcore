@@ -130,8 +130,9 @@ namespace elasticsearch_netcore.Repositories
 
                         return new CategoryViewModel(found);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogError(ex, "Error updating category {CategoryId}", id);
                     }
                 }
             }
@@ -172,7 +173,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Article)
-                                .ThenInclude(a => a.Authorships).ThenInclude(a => a.Author);
+                                .ThenInclude(a => a.Authorships).ThenInclude(a => a.Author)
+                                .AsSplitQuery();
                 }
                 else
                     table = table.Include(a => a.Article);

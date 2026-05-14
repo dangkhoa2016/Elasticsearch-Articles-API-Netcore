@@ -36,7 +36,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Article)
-                                .Include(a => a.Author);
+                                .Include(a => a.Author)
+                                .AsSplitQuery();
                 }
 
                 if (filter != null)
@@ -105,7 +106,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Article)
-                                .Include(a => a.Author);
+                                .Include(a => a.Author)
+                                .AsSplitQuery();
                 }
 
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);

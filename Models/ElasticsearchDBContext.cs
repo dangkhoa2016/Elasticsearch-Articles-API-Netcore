@@ -62,6 +62,9 @@ namespace elasticsearch_netcore.Models
                     .HasDefaultValueSql("datetime('now')");
                 entity.Property(e => e.UpdatedAt)
                     .HasDefaultValueSql("datetime('now')");
+
+                entity.HasIndex(e => e.Title).HasDatabaseName("index_articles_on_title");
+                entity.HasIndex(e => e.CreatedAt).HasDatabaseName("index_articles_on_created_at");
             });
 
             modelBuilder.Entity<ArticlesCategory>(entity =>
@@ -76,6 +79,9 @@ namespace elasticsearch_netcore.Models
                 entity.HasOne(d => d.Category)
                     .WithMany(p => p.ArticlesCategories)
                     .HasForeignKey(d => d.CategoryId);
+
+                entity.HasIndex(e => e.ArticleId).HasDatabaseName("index_articles_categories_on_article_id");
+                entity.HasIndex(e => e.CategoryId).HasDatabaseName("index_articles_categories_on_category_id");
             });
 
             modelBuilder.Entity<Author>(entity =>
@@ -87,6 +93,8 @@ namespace elasticsearch_netcore.Models
                 entity.HasMany(d => d.Authorships)
                     .WithOne(p => p.Author)
                     .HasForeignKey(d => d.AuthorId);
+
+                entity.HasIndex(e => new { e.FirstName, e.LastName }).HasDatabaseName("index_authors_on_first_name_last_name");
             });
 
             modelBuilder.Entity<Authorship>(entity =>
@@ -101,6 +109,9 @@ namespace elasticsearch_netcore.Models
                 entity.HasOne(d => d.Author)
                     .WithMany(p => p.Authorships)
                     .HasForeignKey(d => d.AuthorId);
+
+                entity.HasIndex(e => e.ArticleId).HasDatabaseName("index_authorships_on_article_id");
+                entity.HasIndex(e => e.AuthorId).HasDatabaseName("index_authorships_on_author_id");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -111,6 +122,8 @@ namespace elasticsearch_netcore.Models
                 entity.HasMany(d => d.ArticlesCategories)
                     .WithOne(p => p.Category)
                     .HasForeignKey(d => d.CategoryId);
+
+                entity.HasIndex(e => e.Title).HasDatabaseName("index_categories_on_title");
             });
 
             modelBuilder.Entity<Comment>(entity =>
@@ -123,6 +136,8 @@ namespace elasticsearch_netcore.Models
                 entity.HasOne(d => d.Article)
                     .WithMany(p => p.Comments)
                     .HasForeignKey(d => d.ArticleId);
+
+                entity.HasIndex(e => e.ArticleId).HasDatabaseName("index_comments_on_article_id");
             });
 
             OnModelCreatingPartial(modelBuilder);

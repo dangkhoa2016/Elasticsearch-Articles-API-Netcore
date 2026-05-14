@@ -134,8 +134,9 @@ namespace elasticsearch_netcore.Repositories
 
                         return new AuthorViewModel(found);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogError(ex, "Error updating author {AuthorId}", id);
                     }
                 }
             }
@@ -176,7 +177,8 @@ namespace elasticsearch_netcore.Repositories
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Article)
-                                .ThenInclude(a => a.ArticlesCategories).ThenInclude(a => a.Category);
+                                .ThenInclude(a => a.ArticlesCategories).ThenInclude(a => a.Category)
+                                .AsSplitQuery();
                 }
                 else
                     table = table.Include(a => a.Article);

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace elasticsearch_netcore.Models
 {
     [Table("authors")]
+    [Index(nameof(FirstName), nameof(LastName), Name = "index_authors_on_first_name_last_name")]
     public partial class Author
     {
         public Author()

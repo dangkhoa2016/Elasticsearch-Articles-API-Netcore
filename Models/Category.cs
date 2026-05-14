@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace elasticsearch_netcore.Models
 {
     [Table("categories")]
+    [Index(nameof(Title), Name = "index_categories_on_title")]
     public partial class Category
     {
         public Category()
