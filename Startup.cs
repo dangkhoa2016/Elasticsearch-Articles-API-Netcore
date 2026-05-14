@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using AspNetCoreRateLimit;
 
 namespace elasticsearch_netcore
 {
@@ -29,6 +30,13 @@ namespace elasticsearch_netcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Rate Limiting Configuration
+            services.AddMemoryCache();
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+            services.AddInMemoryRateLimiting();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
                 var allowedOrigins = Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
@@ -102,6 +110,9 @@ namespace elasticsearch_netcore
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseMiddleware<Middleware.ExceptionHandlingMiddleware>();
+
+            // Rate Limiting Middleware
+            app.UseIpRateLimiting();
 
             //Handle 404 errors
             app.Use(async (ctx, next) =>
