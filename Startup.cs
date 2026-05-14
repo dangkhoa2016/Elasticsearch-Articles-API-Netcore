@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,12 +32,30 @@ namespace elasticsearch_netcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Rate Limiting Configuration
-            services.AddMemoryCache();
-            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
-            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
-            services.AddInMemoryRateLimiting();
-            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+// Rate Limiting Configuration
+             services.AddMemoryCache();
+             services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+             services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+             services.AddInMemoryRateLimiting();
+             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+             // Response Compression
+             services.AddResponseCompression(options =>
+             {
+                 options.EnableForHttps = true;
+                 options.Providers.Add<GzipCompressionProvider>();
+                 options.Providers.Add<BrotliCompressionProvider>();
+             });
+
+             services.Configure<GzipCompressionProviderOptions>(options =>
+             {
+                 options.Level = System.IO.Compression.CompressionLevel.Optimal;
+             });
+
+             services.Configure<BrotliCompressionProviderOptions>(options =>
+             {
+                 options.Level = System.IO.Compression.CompressionLevel.Optimal;
+             });
 
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
@@ -137,7 +156,10 @@ namespace elasticsearch_netcore
                 }
             });
 
-            app.UseSerilogRequestLogging();
+            // Response Compression Middleware
+             app.UseResponseCompression();
+
+             app.UseSerilogRequestLogging();
 
             // HTTPS Redirection for Production
             if (!env.IsDevelopment())
