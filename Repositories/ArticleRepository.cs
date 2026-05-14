@@ -9,6 +9,8 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Nest;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace elasticsearch_netcore.Repositories
@@ -16,17 +18,41 @@ namespace elasticsearch_netcore.Repositories
     public class ArticleRepository : IArticleRepository
     {
         private ElasticsearchDBContext db;
-
         private readonly ILogger<ArticleRepository> _logger;
         private readonly Helpers.Helper _helper;
-        public ArticleRepository(ElasticsearchDBContext db, ILogger<ArticleRepository> logger, Helpers.Helper helper)
+        private readonly IMemoryCache _cache;
+        private readonly IConfiguration _configuration;
+
+        public ArticleRepository(ElasticsearchDBContext db, ILogger<ArticleRepository> logger, Helpers.Helper helper, IMemoryCache cache, IConfiguration configuration)
         {
             this.db = db;
             _logger = logger;
             _helper = helper;
+            _cache = cache;
+            _configuration = configuration;
         }
 
         #region action
+
+        private void InvalidateArticleCache(long? articleId = null)
+        {
+            // Invalidate article list cache (all variations)
+            var cacheKeys = new List<string>();
+            
+            // We can't enumerate all cache keys easily, so we'll use a simple approach
+            // In production, consider using a cache key prefix pattern with Redis
+            if (articleId.HasValue)
+            {
+                // Invalidate specific article cache
+                _cache.Remove($"article_{articleId.Value}_true");
+                _cache.Remove($"article_{articleId.Value}_false");
+                _logger.LogInformation("Invalidated cache for article {ArticleId}", articleId.Value);
+            }
+            
+            // For simplicity, we'll rely on cache expiration for list caches
+            // In production with Redis, you could use key patterns to delete all matching keys
+            _logger.LogInformation("Article cache invalidation triggered");
+        }
 
         public async Task<dynamic> GetArticles(int skip, int take = 10, bool loadRelation = false,
             Expression<Func<Article, bool>> filter = null, bool showTotal = false)
@@ -38,6 +64,16 @@ namespace elasticsearch_netcore.Repositories
                 if (take > 50 || take <= 0)
                     take = 10;
 
+                var cacheKey = $"articles_{skip}_{take}_{loadRelation}_{showTotal}_{filter?.ToString() ?? "nofilter"}";
+                
+                if (_cache.TryGetValue(cacheKey, out dynamic cachedResult))
+                {
+                    _logger.LogInformation("Cache hit for articles list (skip: {Skip}, take: {Take})", skip, take);
+                    return cachedResult;
+                }
+
+                _logger.LogInformation("Cache miss for articles list (skip: {Skip}, take: {Take})", skip, take);
+
                 List<ArticleViewModel> articles = new List<ArticleViewModel>();
 
                 var table = db.Articles.AsQueryable().AsNoTracking();
@@ -46,7 +82,6 @@ namespace elasticsearch_netcore.Repositories
                 {
                     table = table.Include(a => a.Authorships).ThenInclude(a => a.Author)
                                 .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category);
-                    //.Include(a => a.Comments);
                 }
 
                 if (filter != null)
@@ -57,10 +92,16 @@ namespace elasticsearch_netcore.Repositories
                 foreach (var r in records)
                     articles.Add(new ArticleViewModel(r, true));
 
+                dynamic result;
                 if (showTotal)
-                    return new { data = articles, total = await table.CountAsync() };
+                    result = new { data = articles, total = await table.CountAsync() };
                 else
-                    return articles;
+                    result = articles;
+
+                var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleListExpirationMinutes", 5);
+                _cache.Set(cacheKey, (object)result, TimeSpan.FromMinutes(cacheExpiration));
+
+                return result;
             }
 
             return null;
@@ -140,6 +181,8 @@ namespace elasticsearch_netcore.Repositories
 
                 await IndexDocument(result.Entity.Id);
 
+                InvalidateArticleCache();
+
                 return new ArticleViewModel(result.Entity, true);
             }
 
@@ -173,6 +216,8 @@ namespace elasticsearch_netcore.Repositories
 
                     await IndexDocument(found.Id);
 
+                    InvalidateArticleCache(found.Id);
+
                     return new ArticleViewModel(found, true);
                 }
             }
@@ -184,6 +229,16 @@ namespace elasticsearch_netcore.Repositories
         {
             if (db != null && id > 0)
             {
+                var cacheKey = $"article_{id}_{loadRelation}";
+                
+                if (_cache.TryGetValue(cacheKey, out ArticleViewModel cachedArticle))
+                {
+                    _logger.LogInformation("Cache hit for article {ArticleId}", id);
+                    return cachedArticle;
+                }
+
+                _logger.LogInformation("Cache miss for article {ArticleId}", id);
+
                 var table = db.Articles.AsQueryable().AsNoTracking();
                 if (loadRelation)
                 {
@@ -191,16 +246,16 @@ namespace elasticsearch_netcore.Repositories
                                 .Include(a => a.ArticlesCategories).ThenInclude(a => a.Category)
                                 .Include(a => a.Comments);
                 }
-                else
-                {
-                    //table = table.Include(a => a.Authorships)
-                    //            .Include(a => a.ArticlesCategories);
-                }
 
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
                 {
-                    return new ArticleViewModel(record, true);
+                    var article = new ArticleViewModel(record, true);
+                    
+                    var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleExpirationMinutes", 15);
+                    _cache.Set(cacheKey, article, TimeSpan.FromMinutes(cacheExpiration));
+                    
+                    return article;
                 }
             }
 
