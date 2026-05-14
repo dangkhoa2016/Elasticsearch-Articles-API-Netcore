@@ -1,16 +1,12 @@
-﻿using elasticsearch_netcore.Repositories;
+﻿using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Net.Mime;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using elasticsearch_netcore.Helpers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authorization;
 
 namespace elasticsearch_netcore.Controllers
@@ -20,26 +16,24 @@ namespace elasticsearch_netcore.Controllers
     [Authorize]
     public class ArticleController : ControllerBase
     {
-        private IArticleRepository articleRepository;
-        private readonly IBackgroundWorkerQueue _worker;
+        private readonly IArticleService _articleService;
         private readonly ILogger _logger;
 
-        public ArticleController(IArticleRepository articleRepository, ILogger<ArticleController> logger, IBackgroundWorkerQueue worker)
+        public ArticleController(IArticleService articleService, ILogger<ArticleController> logger)
         {
-            this.articleRepository = articleRepository;
+            _articleService = articleService;
             _logger = logger;
-            _worker = worker;
         }
 
         [HttpGet]
         [Route("articles/{id}/as_indexed_json")]
         public async Task<IActionResult> GetArticleJson(long id)
         {
-            var record = await articleRepository.GetArticle(id, true);
-            if (record == null)
+            var json = await _articleService.GetArticleJsonAsync(id);
+            if (json == null)
                 return NotFound();
 
-            return Content(JsonConvert.SerializeObject(record.AsIndexedJson()), MediaTypeNames.Application.Json);
+            return Content(json, MediaTypeNames.Application.Json);
         }
 
         [HttpGet]
@@ -49,7 +43,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var records = await articleRepository.GetArticles(skip, take, title, loadRelation, showTotal);
+                var records = await _articleService.GetArticlesAsync(skip, take, title, loadRelation, showTotal);
                 if (records == null)
                     return NotFound();
 
@@ -68,13 +62,11 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var record = await articleRepository.GetArticle(id, loadRelation);
-                if (record == null)
+                var article = await _articleService.GetArticleAsync(id, loadRelation);
+                if (article == null)
                     return NotFound();
 
-                JObject article = ArticleRepository.ConvertToJObject(record, loadRelation, ForPage.Detail);
-
-                return Content(article.ToString(Formatting.None), MediaTypeNames.Application.Json);
+                return Content(article.ToString(), MediaTypeNames.Application.Json);
             }
             catch (Exception ex)
             {
@@ -87,7 +79,7 @@ namespace elasticsearch_netcore.Controllers
         [HttpGet("articles/{id}/comments")]
         public async Task<ActionResult> GetCommentsForArticle(long id, int skip, int take, bool showTotal = false)
         {
-            var records = await articleRepository.GetCommentsForArticle(id, skip, take, showTotal);
+            var records = await _articleService.GetCommentsForArticleAsync(id, skip, take, showTotal);
             if (records == null)
                 return NotFound();
 
@@ -100,7 +92,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                await articleRepository.DeleteArticle(id);
+                await _articleService.DeleteArticleAsync(id);
                 return Content(JsonConvert.SerializeObject(new { msg = "Article with id:[" + id + "] has been deleted." }),
                     MediaTypeNames.Application.Json);
             }
@@ -123,14 +115,12 @@ namespace elasticsearch_netcore.Controllers
                 if (articleId == 0)
                     return UnprocessableEntity();
 
-                var record = ConvertToModel(article);
-                record.Id = articleId;
-                record = await articleRepository.UpdateArticle(articleId, record);
+                var record = await _articleService.UpdateArticleAsync(articleId, article);
 
                 if (record == null)
                     return NotFound();
 
-                return record;
+                return Ok(record);
             }
             catch (ArgumentException ex)
             {
@@ -150,9 +140,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var record = ConvertToModel(article);
-                record.Id = 0;
-                record = await articleRepository.CreateArticle(record);
+                var record = await _articleService.CreateArticleAsync(article);
 
                 if (record == null)
                     return UnprocessableEntity();
@@ -171,39 +159,14 @@ namespace elasticsearch_netcore.Controllers
             }
         }
 
-
-        static async System.Threading.Tasks.Task RunBulkIndex(IServiceScopeFactory serviceScopeFactory)
-        {
-            if (serviceScopeFactory == null)
-            {
-                Console.WriteLine("IServiceScopeFactory not provided.");
-                return;
-            }
-
-            using (var scope = serviceScopeFactory.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                var articleRepository = services.GetRequiredService<IArticleRepository>();
-                await articleRepository.BulkIndex();
-            }
-        }
-
-        // demo only
         [HttpPost]
         [Route("articles/import")]
         public async Task<IActionResult> Import()
         {
             try
             {
-                TimeSpan startAt = DateTime.UtcNow.TimeOfDay;
-                _logger.LogInformation($"Starting import at {startAt}");
-                await _worker.QueueBackgroundWorkItemAsync(async token =>
-                {
-                    await RunBulkIndex((IServiceScopeFactory)HttpContext.RequestServices.GetService(typeof(IServiceScopeFactory)));
-                    _logger.LogInformation($"Done import at {DateTime.UtcNow.TimeOfDay}");
-                });
-
-                return Content(JsonConvert.SerializeObject(new { msg = $"Bulk import starting in the background... at {startAt}" }),
+                var message = await _articleService.ImportAsync();
+                return Content(JsonConvert.SerializeObject(new { msg = message }),
                   MediaTypeNames.Application.Json);
             }
             catch (Exception ex)
@@ -212,65 +175,5 @@ namespace elasticsearch_netcore.Controllers
                 return StatusCode(500, new { error = "InternalServerError", message = "Failed to start bulk import. Please try again later." });
             }
         }
-
-        ArticleViewModel ConvertToModel(JsonElement article)
-        {
-            var record = JsonConvert.DeserializeObject<ArticleViewModel>(article.ToString());
-
-            JsonElement propertyCategories = article.GetProperty("categories");
-            if (propertyCategories.ValueKind == JsonValueKind.Array)
-            {
-                record.ArticlesCategories = JArray.Parse(propertyCategories.ToString()).Select(c =>
-                {
-                    long? categoryId = null;
-                    try
-                    {
-                        if (c.GetType() == typeof(JValue))
-                            categoryId = Convert.ToInt64(c);
-                        else
-                        {
-                            categoryId = c.Value<long?>("category_id");
-                            if (!categoryId.HasValue)
-                                categoryId = c.Value<long?>("id");
-                        }
-                    }
-                    catch { }
-
-                    if (!categoryId.HasValue)
-                        return null;
-                    else
-                        return new ArticlesCategoryViewModel() { CategoryId = categoryId };
-                }).Where(c => c != null).ToList();
-            }
-
-            var propertyAuthors = article.GetProperty("authors");
-            if (propertyAuthors.ValueKind == JsonValueKind.Array)
-            {
-                record.Authorships = JArray.Parse(propertyAuthors.ToString()).Select(a =>
-                {
-                    long? authorId = null;
-                    try
-                    {
-                        if (a.GetType() == typeof(JValue))
-                            authorId = Convert.ToInt64(a);
-                        else
-                        {
-                            authorId = a.Value<long?>("category_id");
-                            if (!authorId.HasValue)
-                                authorId = a.Value<long?>("id");
-                        }
-                    }
-                    catch { }
-
-                    if (!authorId.HasValue)
-                        return null;
-                    else
-                        return new AuthorshipViewModel() { AuthorId = authorId };
-                }).Where(a => a != null).ToList();
-            }
-
-            return record;
-        }
-
     }
 }

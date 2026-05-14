@@ -1,9 +1,8 @@
-using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Net.Mime;
 using System.Threading.Tasks;
@@ -16,12 +15,12 @@ namespace elasticsearch_netcore.Controllers
     [Authorize]
     public class AuthorController : ControllerBase
     {
-        private IAuthorRepository authorRepository;
+        private readonly IAuthorService _authorService;
         private readonly ILogger<AuthorController> _logger;
 
-        public AuthorController(IAuthorRepository authorRepository, ILogger<AuthorController> logger)
+        public AuthorController(IAuthorService authorService, ILogger<AuthorController> logger)
         {
-            this.authorRepository = authorRepository;
+            _authorService = authorService;
             _logger = logger;
         }
 
@@ -32,7 +31,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var records = await authorRepository.GetAuthors(skip, take, name, showTotal);
+                var records = await _authorService.GetAuthorsAsync(skip, take, name, showTotal);
                 if (records == null)
                     return NotFound();
 
@@ -51,7 +50,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var record = await authorRepository.GetAuthor(id);
+                var record = await _authorService.GetAuthorAsync(id);
                 if (record == null)
                     return NotFound();
 
@@ -69,7 +68,7 @@ namespace elasticsearch_netcore.Controllers
         public async Task<ActionResult> GetArticlesForAuthor(long id, int skip, int take, bool loadRelation,
             string title = "", bool showTotal = false)
         {
-            var records = await authorRepository.GetArticlesForAuthor(id, skip, take, title, loadRelation, showTotal);
+            var records = await _authorService.GetArticlesForAuthorAsync(id, skip, take, title, loadRelation, showTotal);
             if (records == null)
                 return NotFound();
 
@@ -82,7 +81,8 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                return await authorRepository.DeleteAuthor(id);
+                var result = await _authorService.DeleteAuthorAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -95,19 +95,20 @@ namespace elasticsearch_netcore.Controllers
         [Route("authors/{id}")]
         public async Task<ActionResult<AuthorViewModel>> UpdateAuthor(AuthorViewModel author)
         {
-            if (!IsValid(author))
-                return BadRequest("Please provide first name or last name.");
-
             try
             {
                 long authorId = 0;
                 long.TryParse(HttpContext.Request.RouteValues["id"].ToString(), out authorId);
-                author = await authorRepository.UpdateAuthor(authorId, author);
 
-                if (author == null)
+                var result = await _authorService.UpdateAuthorAsync(authorId, author);
+                if (result == null)
+                {
+                    if (!IsValid(author))
+                        return BadRequest("Please provide first name or last name.");
                     return NotFound();
+                }
 
-                return author;
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -125,9 +126,9 @@ namespace elasticsearch_netcore.Controllers
 
             try
             {
-                author = await authorRepository.CreateAuthor(author);
+                var result = await _authorService.CreateAuthorAsync(author);
 
-                return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
+                return CreatedAtAction("GetAuthor", new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
@@ -138,7 +139,7 @@ namespace elasticsearch_netcore.Controllers
 
         bool IsValid(AuthorViewModel author)
         {
-            return string.IsNullOrWhiteSpace(author.FirstName) == false || string.IsNullOrWhiteSpace(author.LastName) == false;
+            return !string.IsNullOrWhiteSpace(author.FirstName) || !string.IsNullOrWhiteSpace(author.LastName);
         }
     }
 }

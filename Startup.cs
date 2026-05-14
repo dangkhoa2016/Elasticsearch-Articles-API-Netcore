@@ -12,6 +12,7 @@ using elasticsearch_netcore.Middleware;
 using Serilog;
 using elasticsearch_netcore.Extensions;
 using elasticsearch_netcore.Helpers;
+using elasticsearch_netcore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
@@ -119,6 +120,11 @@ namespace elasticsearch_netcore
             services.AddScoped<IAuthorshipRepository, AuthorshipRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
+
+            services.AddScoped<IArticleService, ArticleService>();
+            services.AddScoped<IAuthorService, AuthorService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ICommentService, CommentService>();
 
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblyContaining<Startup>();

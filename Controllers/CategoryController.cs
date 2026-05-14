@@ -1,12 +1,9 @@
-using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -18,12 +15,12 @@ namespace elasticsearch_netcore.Controllers
     [Authorize]
     public class CategoryController : ControllerBase
     {
-        private ICategoryRepository categoryRepository;
+        private readonly ICategoryService _categoryService;
         private readonly ILogger<CategoryController> _logger;
 
-        public CategoryController(ICategoryRepository categoryRepository, ILogger<CategoryController> logger)
+        public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
         {
-            this.categoryRepository = categoryRepository;
+            _categoryService = categoryService;
             _logger = logger;
         }
 
@@ -34,7 +31,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var records = await categoryRepository.GetCategories(skip, take, title, showTotal);
+                var records = await _categoryService.GetCategoriesAsync(skip, take, title, showTotal);
                 if (records == null)
                     return NotFound();
 
@@ -52,7 +49,7 @@ namespace elasticsearch_netcore.Controllers
         public async Task<ActionResult> GetArticlesForCategory(long id, int skip, int take, bool loadRelation,
             string title = "", bool showTotal = false)
         {
-            var records = await categoryRepository.GetArticlesForCategory(id, skip, take, title, loadRelation, showTotal);
+            var records = await _categoryService.GetArticlesForCategoryAsync(id, skip, take, title, loadRelation, showTotal);
             if (records == null)
                 return NotFound();
 
@@ -65,7 +62,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var record = await categoryRepository.GetCategory(id);
+                var record = await _categoryService.GetCategoryAsync(id);
                 if (record == null)
                     return NotFound();
 
@@ -84,7 +81,8 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                return await categoryRepository.DeleteCategory(id);
+                var result = await _categoryService.DeleteCategoryAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -99,14 +97,17 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(category.Title))
+                    return BadRequest(new { error = "ValidationError", message = "title is required." });
+
                 long categoryId = 0;
                 long.TryParse(HttpContext.Request.RouteValues["id"].ToString(), out categoryId);
-                category = await categoryRepository.UpdateCategory(categoryId, category);
 
-                if (category == null)
+                var result = await _categoryService.UpdateCategoryAsync(categoryId, category);
+                if (result == null)
                     return NotFound();
 
-                return category;
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -121,9 +122,12 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                category = await categoryRepository.CreateCategory(category);
+                if (string.IsNullOrWhiteSpace(category.Title))
+                    return BadRequest(new { error = "ValidationError", message = "title is required." });
 
-                return CreatedAtAction("GetCategory", new { id = category.Id }, category);
+                var result = await _categoryService.CreateCategoryAsync(category);
+
+                return CreatedAtAction("GetCategory", new { id = result.Id }, result);
             }
             catch (Exception ex)
             {

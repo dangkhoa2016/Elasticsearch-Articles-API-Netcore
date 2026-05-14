@@ -76,6 +76,11 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
+                if (!authorship.ArticleId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "article_id is required." });
+                if (!authorship.AuthorId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "author_id is required." });
+
                 long authorshipId = 0;
                 long.TryParse(HttpContext.Request.RouteValues["id"].ToString(), out authorshipId);
                 authorship = await authorshipRepository.UpdateAuthorship(authorshipId, authorship);
@@ -98,7 +103,15 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
+                if (!authorship.ArticleId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "article_id is required." });
+                if (!authorship.AuthorId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "author_id is required." });
+
                 authorship = await authorshipRepository.CreateAuthorship(authorship);
+
+                if (authorship == null)
+                    return Conflict(new { error = "DuplicateError", message = "This author already exists for the specified article." });
 
                 return Content(AuthorshipRepository.ConvertToJObject(authorship, false).ToString(Formatting.None), MediaTypeNames.Application.Json);
                 //return CreatedAtAction("GetAuthorship", new { id = authorship.Id }, authorship);

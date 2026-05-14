@@ -1,4 +1,4 @@
-using elasticsearch_netcore.Repositories;
+using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -15,12 +15,12 @@ namespace elasticsearch_netcore.Controllers
     [Authorize]
     public class CommentController : ControllerBase
     {
-        private ICommentRepository commentRepository;
+        private readonly ICommentService _commentService;
         private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepository commentRepository, ILogger<CommentController> logger)
+        public CommentController(ICommentService commentService, ILogger<CommentController> logger)
         {
-            this.commentRepository = commentRepository;
+            _commentService = commentService;
             _logger = logger;
         }
 
@@ -31,7 +31,7 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var records = await commentRepository.GetComments(skip, take, loadRelation, null, showTotal);
+                var records = await _commentService.GetCommentsAsync(skip, take, loadRelation, showTotal);
                 if (records == null)
                     return NotFound();
 
@@ -50,11 +50,11 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                var record = await commentRepository.GetComment(id, loadRelation);
-                if (record == null)
+                var json = await _commentService.GetCommentAsync(id, loadRelation);
+                if (json == null)
                     return NotFound();
 
-                return Content(CommentRepository.ConvertToJObject(record, loadRelation).ToString(Formatting.None), MediaTypeNames.Application.Json);
+                return Content(json, MediaTypeNames.Application.Json);
             }
             catch (Exception ex)
             {
@@ -69,7 +69,8 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                return await commentRepository.DeleteComment(id);
+                var result = await _commentService.DeleteCommentAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -84,14 +85,19 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(comment.Body))
+                    return BadRequest(new { error = "ValidationError", message = "body is required." });
+                if (!comment.ArticleId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "article_id is required." });
+
                 long commentId = 0;
                 long.TryParse(HttpContext.Request.RouteValues["id"].ToString(), out commentId);
-                comment = await commentRepository.UpdateComment(commentId, comment);
 
-                if (comment == null)
+                var result = await _commentService.UpdateCommentAsync(commentId, comment);
+                if (result == null)
                     return NotFound();
 
-                return comment;
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -106,9 +112,14 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                comment = await commentRepository.CreateComment(comment);
+                if (string.IsNullOrWhiteSpace(comment.Body))
+                    return BadRequest(new { error = "ValidationError", message = "body is required." });
+                if (!comment.ArticleId.HasValue)
+                    return BadRequest(new { error = "ValidationError", message = "article_id is required." });
 
-                return CreatedAtAction("GetComment", new { id = comment.Id }, comment);
+                var result = await _commentService.CreateCommentAsync(comment);
+
+                return CreatedAtAction("GetComment", new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
