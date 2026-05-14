@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using elasticsearch_netcore.Repositories;
 using elasticsearch_netcore.Middleware;
 using Serilog;
@@ -103,12 +104,23 @@ namespace elasticsearch_netcore
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblyContaining<Startup>();
 
+            // HSTS Configuration
+            services.AddHsts(options =>
+            {
+                options.MaxAge = TimeSpan.FromDays(365);
+                options.IncludeSubDomains = true;
+                options.Preload = true;
+            });
+
             services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // Security Headers Middleware
+            app.UseMiddleware<Middleware.SecurityHeadersMiddleware>();
+
             app.UseMiddleware<Middleware.ExceptionHandlingMiddleware>();
 
             // Rate Limiting Middleware
@@ -127,7 +139,12 @@ namespace elasticsearch_netcore
 
             app.UseSerilogRequestLogging();
 
-            // app.UseHttpsRedirection();
+            // HTTPS Redirection for Production
+            if (!env.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+                app.UseHsts();
+            }
 
             app.UseCors("APIPolicy");
 
