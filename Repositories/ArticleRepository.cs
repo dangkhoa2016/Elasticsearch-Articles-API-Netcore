@@ -304,7 +304,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task BulkIndex()
         {
             bool isContinue = true;
-            int pageSize = 30;
+            int pageSize = 100; // Increased from 30 to 100 for better performance
             int pageIndex = 1;
             int total = 0;
             while (isContinue)
