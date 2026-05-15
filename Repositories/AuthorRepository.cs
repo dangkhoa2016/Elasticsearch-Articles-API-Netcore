@@ -18,12 +18,14 @@ namespace elasticsearch_netcore.Repositories
     {
         private readonly Helpers.Helper _helper;
         private readonly ILogger<AuthorRepository> _logger;
+        private readonly AutoMapper.IMapper _mapper;
 
-        public AuthorRepository(ElasticsearchDBContext db, ILogger<AuthorRepository> logger, Helpers.Helper helper)
+        public AuthorRepository(ElasticsearchDBContext db, ILogger<AuthorRepository> logger, Helpers.Helper helper, AutoMapper.IMapper mapper)
             : base(db)
         {
             _helper = helper;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<dynamic> GetAuthors(int skip, int take = AppConstants.DefaultPageSize,
@@ -36,8 +38,6 @@ namespace elasticsearch_netcore.Repositories
                 if (take > AppConstants.MaxPageSize || take <= 0)
                     take = AppConstants.DefaultPageSize;
 
-                List<AuthorViewModel> authors = new List<AuthorViewModel>();
-
                 var table = _context.Authors.AsQueryable().AsNoTracking();
 
                 if (filter != null)
@@ -46,8 +46,7 @@ namespace elasticsearch_netcore.Repositories
                 var records = await table.OrderBy(a => a.FirstName).ThenBy(a => a.LastName).ThenBy(a => a.CreatedAt)
                     .Skip(skip).Take(take).ToListAsync();
 
-                foreach (var r in records)
-                    authors.Add(new AuthorViewModel(r, false));
+                var authors = _mapper.Map<List<AuthorViewModel>>(records);
 
                 if (showTotal)
                     return new { data = authors, total = await table.CountAsync() };
@@ -80,7 +79,7 @@ namespace elasticsearch_netcore.Repositories
                     .Skip(skip).Take(take).ToListAsync();
 
                 foreach (var r in records)
-                    authors.Add(JObject.FromObject(new AuthorViewModel(r, false)));
+                    authors.Add(JObject.FromObject(_mapper.Map<AuthorViewModel>(r)));
 
                 if (showTotal)
                     return new { data = authors, total = await table.CountAsync() };
@@ -104,7 +103,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var result = await _context.Authors.AddAsync(record);
                 await _context.SaveChangesAsync();
-                return new AuthorViewModel(result.Entity);
+                return _mapper.Map<AuthorViewModel>(result.Entity);
             }
 
             return null;
@@ -131,7 +130,7 @@ namespace elasticsearch_netcore.Repositories
                         // index articles
                         await BulkIndexArticles(id);
 
-                        return new AuthorViewModel(found);
+                        return _mapper.Map<AuthorViewModel>(found);
                     }
                     catch (Exception ex)
                     {
@@ -149,7 +148,7 @@ namespace elasticsearch_netcore.Repositories
             {
                 var record = await _context.Authors.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
-                    return new AuthorViewModel(record, false);
+                    return _mapper.Map<AuthorViewModel>(record);
             }
 
             return null;
@@ -223,7 +222,7 @@ namespace elasticsearch_netcore.Repositories
                             .ThenInclude(a => a.Comments)
                             .Include(a => a.Author)
                             .ToListAsync();
-            IEnumerable<ArticleViewModel> articles = records.Select(r => new ArticleViewModel(r.Article, true));
+            IEnumerable<ArticleViewModel> articles = records.Select(r => _mapper.Map<ArticleViewModel>(r.Article));
 
             if (articles != null && articles.Count() > 0)
             {

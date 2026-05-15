@@ -22,14 +22,16 @@ namespace elasticsearch_netcore.Repositories
         private readonly Helpers.Helper _helper;
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _configuration;
+        private readonly AutoMapper.IMapper _mapper;
 
-        public ArticleRepository(ElasticsearchDBContext db, ILogger<ArticleRepository> logger, Helpers.Helper helper, IMemoryCache cache, IConfiguration configuration)
+        public ArticleRepository(ElasticsearchDBContext db, ILogger<ArticleRepository> logger, Helpers.Helper helper, IMemoryCache cache, IConfiguration configuration, AutoMapper.IMapper mapper)
             : base(db)
         {
             _logger = logger;
             _helper = helper;
             _cache = cache;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         #region action
@@ -74,8 +76,6 @@ namespace elasticsearch_netcore.Repositories
 
                 _logger.LogInformation("Cache miss for articles list (skip: {Skip}, take: {Take})", skip, take);
 
-                List<ArticleViewModel> articles = new List<ArticleViewModel>();
-
                 var table = _context.Articles.AsQueryable().AsNoTracking();
 
                 if (loadRelation)
@@ -90,8 +90,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
 
-                foreach (var r in records)
-                    articles.Add(new ArticleViewModel(r, true));
+                var articles = _mapper.Map<List<ArticleViewModel>>(records);
 
                 dynamic result;
                 if (showTotal)
@@ -141,8 +140,9 @@ namespace elasticsearch_netcore.Repositories
 
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
 
-                foreach (var r in records)
-                    articles.Add(ConvertToJObject(new ArticleViewModel(r, true), loadRelation, ForPage.All));
+                var articleViewModels = _mapper.Map<List<ArticleViewModel>>(records);
+                foreach (var vm in articleViewModels)
+                    articles.Add(ConvertToJObject(vm, loadRelation, ForPage.All));
 
                 if (showTotal)
                 {
@@ -161,7 +161,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetCommentsForArticle(long id, int skip, int take, bool showTotal = false)
         {
             if (_context != null && id > 0)
-                return await (new CommentRepository(_context)).GetComments(skip, take, false, c => c.ArticleId == id, showTotal);
+                return await (new CommentRepository(_context, _mapper)).GetComments(skip, take, false, c => c.ArticleId == id, showTotal);
 
             return null;
         }
@@ -192,7 +192,7 @@ namespace elasticsearch_netcore.Repositories
 
                 InvalidateArticleCache();
 
-                return new ArticleViewModel(result.Entity, true);
+                return _mapper.Map<ArticleViewModel>(result.Entity);
             }
 
             return null;
@@ -226,7 +226,7 @@ namespace elasticsearch_netcore.Repositories
 
                     InvalidateArticleCache(found.Id);
 
-                    return new ArticleViewModel(found, true);
+                    return _mapper.Map<ArticleViewModel>(found);
                 }
             }
 
@@ -259,7 +259,7 @@ namespace elasticsearch_netcore.Repositories
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
                 {
-                    var article = new ArticleViewModel(record, true);
+                    var article = _mapper.Map<ArticleViewModel>(record);
 
                     var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleExpirationMinutes", AppConstants.DefaultCacheExpirationMinutes);
                     _cache.Set(cacheKey, article, TimeSpan.FromMinutes(cacheExpiration));

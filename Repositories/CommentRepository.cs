@@ -13,9 +13,12 @@ namespace elasticsearch_netcore.Repositories
 {
     public class CommentRepository : GenericRepository<Comment>, ICommentRepository
     {
-        public CommentRepository(ElasticsearchDBContext db)
+        private readonly AutoMapper.IMapper _mapper;
+
+        public CommentRepository(ElasticsearchDBContext db, AutoMapper.IMapper mapper)
             : base(db)
         {
+            _mapper = mapper;
         }
 
         public async Task<dynamic> GetComments(int skip, int take = AppConstants.DefaultPageSize, bool loadRelation = false,
@@ -41,7 +44,7 @@ namespace elasticsearch_netcore.Repositories
                     .Skip(skip).Take(take).ToListAsync();
 
                 foreach (var r in records)
-                    comments.Add(JObject.FromObject(ConvertToJObject(new CommentViewModel(r, true), loadRelation)));
+                    comments.Add(JObject.FromObject(ConvertToJObject(_mapper.Map<CommentViewModel>(r), loadRelation)));
 
                 if (showTotal)
                     return new { data = comments, total = await table.CountAsync() };
@@ -69,7 +72,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var result = await _context.Comments.AddAsync(record);
                 await _context.SaveChangesAsync();
-                return new CommentViewModel(result.Entity);
+                return _mapper.Map<CommentViewModel>(result.Entity);
             }
 
             return null;
@@ -94,7 +97,7 @@ namespace elasticsearch_netcore.Repositories
                     found.UpdatedAt = DateTime.Now;
 
                     await _context.SaveChangesAsync();
-                    return new CommentViewModel(found);
+                    return _mapper.Map<CommentViewModel>(found);
                 }
             }
 
@@ -112,7 +115,7 @@ namespace elasticsearch_netcore.Repositories
                 var record = await table.SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
                 {
-                    return new CommentViewModel(record, true);
+                    return _mapper.Map<CommentViewModel>(record);
                 }
             }
 

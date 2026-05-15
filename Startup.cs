@@ -19,6 +19,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using AspNetCoreRateLimit;
 using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Mappings;
 
 namespace elasticsearch_netcore
 {
@@ -127,6 +128,8 @@ namespace elasticsearch_netcore
             services.AddScoped<IAuthorService, AuthorService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ICommentService, CommentService>();
+
+            services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblyContaining<Startup>();

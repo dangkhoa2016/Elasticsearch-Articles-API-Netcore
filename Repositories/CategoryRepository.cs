@@ -18,12 +18,14 @@ namespace elasticsearch_netcore.Repositories
     {
         private readonly Helpers.Helper _helper;
         private readonly ILogger<CategoryRepository> _logger;
+        private readonly AutoMapper.IMapper _mapper;
 
-        public CategoryRepository(ElasticsearchDBContext db, ILogger<CategoryRepository> logger, Helpers.Helper helper)
+        public CategoryRepository(ElasticsearchDBContext db, ILogger<CategoryRepository> logger, Helpers.Helper helper, AutoMapper.IMapper mapper)
             : base(db)
         {
             _helper = helper;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<dynamic> GetCategories(int skip, int take = AppConstants.DefaultPageSize,
@@ -36,8 +38,6 @@ namespace elasticsearch_netcore.Repositories
                 if (take > AppConstants.MaxPageSize || take <= 0)
                     take = AppConstants.DefaultPageSize;
 
-                List<CategoryViewModel> categories = new List<CategoryViewModel>();
-
                 var table = _context.Categories.AsQueryable().AsNoTracking();
 
                 if (filter != null)
@@ -45,8 +45,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
 
-                foreach (var r in records)
-                    categories.Add(new CategoryViewModel(r, false));
+                var categories = _mapper.Map<List<CategoryViewModel>>(records);
 
                 if (showTotal)
                     return new { data = categories, total = await table.CountAsync() };
@@ -79,7 +78,7 @@ namespace elasticsearch_netcore.Repositories
                 var records = await table.OrderBy(a => a.Title).ThenBy(a => a.CreatedAt).Skip(skip).Take(take).ToListAsync();
 
                 foreach (var r in records)
-                    categories.Add(JObject.FromObject(new CategoryViewModel(r, false)));
+                    categories.Add(JObject.FromObject(_mapper.Map<CategoryViewModel>(r)));
 
                 if (showTotal)
                     return new { data = categories, total = await table.CountAsync() };
@@ -102,7 +101,7 @@ namespace elasticsearch_netcore.Repositories
 
                 var result = await _context.Categories.AddAsync(record);
                 await _context.SaveChangesAsync();
-                return new CategoryViewModel(result.Entity);
+                return _mapper.Map<CategoryViewModel>(result.Entity);
             }
 
             return null;
@@ -128,7 +127,7 @@ namespace elasticsearch_netcore.Repositories
                         // index articles
                         await BulkIndexArticles(id);
 
-                        return new CategoryViewModel(found);
+                        return _mapper.Map<CategoryViewModel>(found);
                     }
                     catch (Exception ex)
                     {
@@ -146,7 +145,7 @@ namespace elasticsearch_netcore.Repositories
             {
                 var record = await _context.Categories.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
-                    return new CategoryViewModel(record, false);
+                    return _mapper.Map<CategoryViewModel>(record);
             }
 
             return null;
@@ -220,7 +219,7 @@ namespace elasticsearch_netcore.Repositories
                             .ThenInclude(a => a.Comments)
                             .Include(a => a.Category)
                             .ToListAsync();
-            IEnumerable<ArticleViewModel> articles = records.Select(r => new ArticleViewModel(r.Article, true));
+            IEnumerable<ArticleViewModel> articles = records.Select(r => _mapper.Map<ArticleViewModel>(r.Article));
 
             if (articles != null && articles.Count() > 0)
             {
