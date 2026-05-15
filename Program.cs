@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace elasticsearch_netcore
 {
-    public class Program
+    public partial class Program
     {
         public static IConfiguration Configuration { get; } = new ConfigurationBuilder()
                .SetBasePath(Directory.GetCurrentDirectory())

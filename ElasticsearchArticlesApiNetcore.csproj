@@ -9,6 +9,13 @@
     <Compile Remove="Helpers\Client.cs" />
     <Compile Remove="Models\ArInternalMetadatum.cs" />
     <Compile Remove="Models\SchemaMigration.cs" />
+    <Compile Remove="ElasticsearchArticlesApiNetcore.Tests\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ElasticsearchArticlesApiNetcore.Tests\**\*" />
+    <Content Remove="ElasticsearchArticlesApiNetcore.Tests\**\*" />
+    <EmbeddedResource Remove="ElasticsearchArticlesApiNetcore.Tests\**\*" />
   </ItemGroup>
 
   <ItemGroup>
