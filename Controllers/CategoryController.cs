@@ -1,3 +1,4 @@
+using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace elasticsearch_netcore.Controllers
 
         [HttpGet]
         [Route("categories")]
-        public async Task<IActionResult> GetCategories(int skip = 0, int take = 10,
+        public async Task<IActionResult> GetCategories(int skip = 0, int take = AppConstants.DefaultPageSize,
             string title = "", bool showTotal = false)
         {
             try
@@ -40,7 +41,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetCategories: skip={Skip}, take={Take}, title={Title}", skip, take, title);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve categories. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve categories. Please try again later." });
             }
         }
 
@@ -71,7 +72,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetCategory: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve category. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve category. Please try again later." });
             }
         }
 
@@ -87,7 +88,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DeleteCategory: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete category. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to delete category. Please try again later." });
             }
         }
 
@@ -112,7 +113,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateCategory");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update category. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to update category. Please try again later." });
             }
         }
 
@@ -132,7 +133,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CreateCategory");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create category. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to create category. Please try again later." });
             }
         }
     }

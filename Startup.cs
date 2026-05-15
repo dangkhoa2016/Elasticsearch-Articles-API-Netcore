@@ -18,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using AspNetCoreRateLimit;
+using elasticsearch_netcore.Constants;
 
 namespace elasticsearch_netcore
 {
@@ -33,30 +34,30 @@ namespace elasticsearch_netcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-// Rate Limiting Configuration
-             services.AddMemoryCache();
-             services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
-             services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
-             services.AddInMemoryRateLimiting();
-             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+            // Rate Limiting Configuration
+            services.AddMemoryCache();
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+            services.AddInMemoryRateLimiting();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-             // Response Compression
-             services.AddResponseCompression(options =>
-             {
-                 options.EnableForHttps = true;
-                 options.Providers.Add<GzipCompressionProvider>();
-                 options.Providers.Add<BrotliCompressionProvider>();
-             });
+            // Response Compression
+            services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<GzipCompressionProvider>();
+                options.Providers.Add<BrotliCompressionProvider>();
+            });
 
-             services.Configure<GzipCompressionProviderOptions>(options =>
-             {
-                 options.Level = System.IO.Compression.CompressionLevel.Optimal;
-             });
+            services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = System.IO.Compression.CompressionLevel.Optimal;
+            });
 
-             services.Configure<BrotliCompressionProviderOptions>(options =>
-             {
-                 options.Level = System.IO.Compression.CompressionLevel.Optimal;
-             });
+            services.Configure<BrotliCompressionProviderOptions>(options =>
+            {
+                options.Level = System.IO.Compression.CompressionLevel.Optimal;
+            });
 
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
@@ -75,7 +76,6 @@ namespace elasticsearch_netcore
             }));
 
             services
-                //.AddEntityFrameworkSqlite()
                 .AddDbContext<Models.ElasticsearchDBContext>(item => item.UseSqlite(Configuration.GetConnectionString("DBConnectionString")));
 
             services.AddElasticsearch(Configuration);
@@ -110,7 +110,7 @@ namespace elasticsearch_netcore
             services.AddSingleton<IBackgroundWorkerQueue>(sp =>
             {
                 if (!int.TryParse(Configuration["QueueCapacity"], out var queueCapacity))
-                    queueCapacity = 100;
+                    queueCapacity = AppConstants.DefaultQueueCapacity;
 
                 return new BackgroundWorkerQueue(queueCapacity);
             });
@@ -165,9 +165,9 @@ namespace elasticsearch_netcore
             });
 
             // Response Compression Middleware
-             app.UseResponseCompression();
+            app.UseResponseCompression();
 
-             app.UseSerilogRequestLogging();
+            app.UseSerilogRequestLogging();
 
             // HTTPS Redirection for Production
             if (!env.IsDevelopment())

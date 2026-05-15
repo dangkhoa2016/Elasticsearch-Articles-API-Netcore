@@ -1,3 +1,4 @@
+using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace elasticsearch_netcore.Controllers
 
         [HttpGet]
         [Route("comments")]
-        public async Task<IActionResult> GetComments(int skip = 0, int take = 10,
+        public async Task<IActionResult> GetComments(int skip = 0, int take = AppConstants.DefaultPageSize,
             bool loadRelation = false, bool showTotal = false)
         {
             try
@@ -40,7 +41,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetComments: skip={Skip}, take={Take}", skip, take);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve comments. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve comments. Please try again later." });
             }
         }
 
@@ -59,7 +60,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetComment: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve comment. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve comment. Please try again later." });
             }
         }
 
@@ -75,7 +76,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DeleteComment: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete comment. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to delete comment. Please try again later." });
             }
         }
 
@@ -102,7 +103,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateComment");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update comment. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to update comment. Please try again later." });
             }
         }
 
@@ -124,7 +125,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CreateComment");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create comment. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to create comment. Please try again later." });
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using elasticsearch_netcore.Models;
+﻿using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Models;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
@@ -53,15 +54,15 @@ namespace elasticsearch_netcore.Repositories
             _logger.LogInformation("Article cache invalidation triggered");
         }
 
-        public async Task<dynamic> GetArticles(int skip, int take = 10, bool loadRelation = false,
+        public async Task<dynamic> GetArticles(int skip, int take = AppConstants.DefaultPageSize, bool loadRelation = false,
             Expression<Func<Article, bool>> filter = null, bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 var cacheKey = $"articles_{skip}_{take}_{loadRelation}_{showTotal}_{filter?.ToString() ?? "nofilter"}";
 
@@ -112,15 +113,15 @@ namespace elasticsearch_netcore.Repositories
             return null;
         }
 
-        public async Task<dynamic> GetArticles(int skip, int take = 10,
+        public async Task<dynamic> GetArticles(int skip, int take = AppConstants.DefaultPageSize,
             string title = "", bool loadRelation = false, bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray articles = new JArray();
 
@@ -260,7 +261,7 @@ namespace elasticsearch_netcore.Repositories
                 {
                     var article = new ArticleViewModel(record, true);
 
-                    var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleExpirationMinutes", 15);
+                    var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleExpirationMinutes", AppConstants.DefaultCacheExpirationMinutes);
                     _cache.Set(cacheKey, article, TimeSpan.FromMinutes(cacheExpiration));
 
                     return article;
@@ -300,7 +301,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task BulkIndex()
         {
             bool isContinue = true;
-            int pageSize = 100; // Increased from 30 to 100 for better performance
+            int pageSize = AppConstants.BulkIndexPageSize;
             int pageIndex = 1;
             int total = 0;
             while (isContinue)

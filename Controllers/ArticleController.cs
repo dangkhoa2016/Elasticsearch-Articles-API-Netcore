@@ -1,4 +1,5 @@
-﻿using elasticsearch_netcore.Services;
+﻿using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -38,7 +39,7 @@ namespace elasticsearch_netcore.Controllers
 
         [HttpGet]
         [Route("articles")]
-        public async Task<IActionResult> GetArticles(int skip = 0, int take = 10, string title = "",
+        public async Task<IActionResult> GetArticles(int skip = 0, int take = AppConstants.DefaultPageSize, string title = "",
             bool loadRelation = false, bool showTotal = false)
         {
             try
@@ -52,7 +53,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetArticles: skip={Skip}, take={Take}, title={Title}", skip, take, title);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve articles. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve articles. Please try again later." });
             }
         }
 
@@ -71,7 +72,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetArticle: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve article. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve article. Please try again later." });
             }
         }
 
@@ -99,7 +100,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DeleteArticle: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete article. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to delete article. Please try again later." });
             }
         }
 
@@ -130,7 +131,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateArticle");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update article. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to update article. Please try again later." });
             }
         }
 
@@ -155,7 +156,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CreateArticle");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create article. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to create article. Please try again later." });
             }
         }
 
@@ -172,7 +173,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Import");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to start bulk import. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to start bulk import. Please try again later." });
             }
         }
     }

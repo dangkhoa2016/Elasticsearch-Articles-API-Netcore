@@ -1,4 +1,5 @@
-﻿using elasticsearch_netcore.Models;
+﻿using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Models;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -25,15 +26,15 @@ namespace elasticsearch_netcore.Repositories
             _logger = logger;
         }
 
-        public async Task<dynamic> GetAuthors(int skip, int take = 10,
+        public async Task<dynamic> GetAuthors(int skip, int take = AppConstants.DefaultPageSize,
             Expression<Func<Author, bool>> filter = null, bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 List<AuthorViewModel> authors = new List<AuthorViewModel>();
 
@@ -57,14 +58,14 @@ namespace elasticsearch_netcore.Repositories
             return null;
         }
 
-        public async Task<dynamic> GetAuthors(int skip, int take = 10, string name = "", bool showTotal = false)
+        public async Task<dynamic> GetAuthors(int skip, int take = AppConstants.DefaultPageSize, string name = "", bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray authors = new JArray();
 
@@ -161,8 +162,8 @@ namespace elasticsearch_netcore.Repositories
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray articles = new JArray();
                 IQueryable<Authorship> table = _context.Authorships.AsNoTracking().Where(a => a.AuthorId == id);

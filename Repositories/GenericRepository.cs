@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +51,7 @@ namespace elasticsearch_netcore.Repositories
             Expression<Func<T, bool>> filter = null,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             int skip = 0,
-            int take = 10,
+            int take = AppConstants.DefaultPageSize,
             bool asNoTracking = true)
         {
             return await FindWithIncludesAsync(filter, orderBy, null, skip, take, asNoTracking);
@@ -61,9 +62,12 @@ namespace elasticsearch_netcore.Repositories
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             List<Expression<Func<T, object>>> includes = null,
             int skip = 0,
-            int take = 10,
+            int take = AppConstants.DefaultPageSize,
             bool asNoTracking = true)
         {
+            if (skip < 0) skip = 0;
+            if (take > AppConstants.MaxPageSize || take <= 0) take = AppConstants.DefaultPageSize;
+
             IQueryable<T> query = _dbSet.AsQueryable();
 
             if (asNoTracking)
@@ -84,8 +88,7 @@ namespace elasticsearch_netcore.Repositories
             if (skip > 0)
                 query = query.Skip(skip);
 
-            if (take > 0)
-                query = query.Take(take);
+            query = query.Take(take);
 
             return await query.ToListAsync();
         }

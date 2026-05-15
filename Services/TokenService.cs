@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using elasticsearch_netcore.Constants;
 
 namespace elasticsearch_netcore.Services
 {
@@ -21,7 +22,7 @@ namespace elasticsearch_netcore.Services
             var secret = _configuration["JwtSettings:Secret"];
             var issuer = _configuration["JwtSettings:Issuer"];
             var audience = _configuration["JwtSettings:Audience"];
-            var expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationMinutes"] ?? "60");
+            var expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationMinutes"] ?? AppConstants.DefaultJwtExpirationMinutes.ToString());
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

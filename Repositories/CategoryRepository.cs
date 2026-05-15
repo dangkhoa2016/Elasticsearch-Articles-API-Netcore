@@ -1,4 +1,5 @@
-﻿using elasticsearch_netcore.Models;
+﻿using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Models;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -25,15 +26,15 @@ namespace elasticsearch_netcore.Repositories
             _logger = logger;
         }
 
-        public async Task<dynamic> GetCategories(int skip, int take = 10,
+        public async Task<dynamic> GetCategories(int skip, int take = AppConstants.DefaultPageSize,
             Expression<Func<Category, bool>> filter = null, bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 List<CategoryViewModel> categories = new List<CategoryViewModel>();
 
@@ -56,15 +57,15 @@ namespace elasticsearch_netcore.Repositories
             return null;
         }
 
-        public async Task<dynamic> GetCategories(int skip, int take = 10,
+        public async Task<dynamic> GetCategories(int skip, int take = AppConstants.DefaultPageSize,
             string title = "", bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray categories = new JArray();
 
@@ -158,8 +159,8 @@ namespace elasticsearch_netcore.Repositories
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray articles = new JArray();
                 IQueryable<ArticlesCategory> table = _context.ArticlesCategories.AsNoTracking().Where(a => a.CategoryId == id);

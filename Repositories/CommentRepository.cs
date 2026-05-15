@@ -1,4 +1,5 @@
-﻿using elasticsearch_netcore.Models;
+﻿using elasticsearch_netcore.Constants;
+using elasticsearch_netcore.Models;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
@@ -17,15 +18,15 @@ namespace elasticsearch_netcore.Repositories
         {
         }
 
-        public async Task<dynamic> GetComments(int skip, int take = 10, bool loadRelation = false,
+        public async Task<dynamic> GetComments(int skip, int take = AppConstants.DefaultPageSize, bool loadRelation = false,
             Expression<Func<Comment, bool>> filter = null, bool showTotal = false)
         {
             if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
-                if (take > 50 || take <= 0)
-                    take = 10;
+                if (take > AppConstants.MaxPageSize || take <= 0)
+                    take = AppConstants.DefaultPageSize;
 
                 JArray comments = new JArray();
 

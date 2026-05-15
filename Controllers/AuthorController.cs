@@ -1,3 +1,4 @@
+using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Services;
 using elasticsearch_netcore.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace elasticsearch_netcore.Controllers
 
         [HttpGet]
         [Route("authors")]
-        public async Task<IActionResult> GetAuthors(int skip = 0, int take = 10,
+        public async Task<IActionResult> GetAuthors(int skip = 0, int take = AppConstants.DefaultPageSize,
             string name = "", bool showTotal = false)
         {
             try
@@ -40,7 +41,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetAuthors: skip={Skip}, take={Take}, name={Name}", skip, take, name);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve authors. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve authors. Please try again later." });
             }
         }
 
@@ -59,7 +60,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetAuthor: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to retrieve author. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to retrieve author. Please try again later." });
             }
         }
 
@@ -87,7 +88,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DeleteAuthor: id={Id}", id);
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to delete author. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to delete author. Please try again later." });
             }
         }
 
@@ -113,7 +114,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in UpdateAuthor");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to update author. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to update author. Please try again later." });
             }
         }
 
@@ -133,7 +134,7 @@ namespace elasticsearch_netcore.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in CreateAuthor");
-                return StatusCode(500, new { error = "InternalServerError", message = "Failed to create author. Please try again later." });
+                return StatusCode(AppConstants.HttpStatusCodeInternalServerError, new { error = "InternalServerError", message = "Failed to create author. Please try again later." });
             }
         }
 

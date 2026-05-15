@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using elasticsearch_netcore.Constants;
 
 namespace elasticsearch_netcore.Repositories
 {
@@ -35,7 +36,7 @@ namespace elasticsearch_netcore.Repositories
             Expression<Func<T, bool>> filter = null,
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             int skip = 0,
-            int take = 10,
+            int take = AppConstants.DefaultPageSize,
             bool asNoTracking = true);
 
         /// <summary>
@@ -46,7 +47,7 @@ namespace elasticsearch_netcore.Repositories
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             List<Expression<Func<T, object>>> includes = null,
             int skip = 0,
-            int take = 10,
+            int take = AppConstants.DefaultPageSize,
             bool asNoTracking = true);
 
         /// <summary>
