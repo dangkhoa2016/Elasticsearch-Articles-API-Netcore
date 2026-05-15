@@ -121,6 +121,8 @@ namespace elasticsearch_netcore
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
             services.AddScoped<IArticleService, ArticleService>();
             services.AddScoped<IAuthorService, AuthorService>();
             services.AddScoped<ICategoryService, CategoryService>();

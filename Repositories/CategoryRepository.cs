@@ -13,23 +13,22 @@ using System.Threading.Tasks;
 
 namespace elasticsearch_netcore.Repositories
 {
-    public class CategoryRepository : ICategoryRepository
+    public class CategoryRepository : GenericRepository<Category>, ICategoryRepository
     {
-        private ElasticsearchDBContext db;
         private readonly Helpers.Helper _helper;
         private readonly ILogger<CategoryRepository> _logger;
 
         public CategoryRepository(ElasticsearchDBContext db, ILogger<CategoryRepository> logger, Helpers.Helper helper)
+            : base(db)
         {
-            this.db = db;
-            _logger = logger;
             _helper = helper;
+            _logger = logger;
         }
 
         public async Task<dynamic> GetCategories(int skip, int take = 10,
             Expression<Func<Category, bool>> filter = null, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -38,7 +37,7 @@ namespace elasticsearch_netcore.Repositories
 
                 List<CategoryViewModel> categories = new List<CategoryViewModel>();
 
-                var table = db.Categories.AsQueryable().AsNoTracking();
+                var table = _context.Categories.AsQueryable().AsNoTracking();
 
                 if (filter != null)
                     table = table.Where(filter);
@@ -60,7 +59,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetCategories(int skip, int take = 10,
             string title = "", bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -69,7 +68,7 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray categories = new JArray();
 
-                IQueryable<Category> table = db.Categories.AsNoTracking();
+                IQueryable<Category> table = _context.Categories.AsNoTracking();
 
                 if (!string.IsNullOrWhiteSpace(title))
                 {
@@ -92,7 +91,7 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CategoryViewModel> CreateCategory(CategoryViewModel category)
         {
-            if (db != null)
+            if (_context != null)
             {
                 var record = new Category();
 
@@ -100,8 +99,8 @@ namespace elasticsearch_netcore.Repositories
                 record.UpdatedAt = DateTime.Now;
                 record.CreatedAt = DateTime.Now;
 
-                var result = await db.Categories.AddAsync(record);
-                await db.SaveChangesAsync();
+                var result = await _context.Categories.AddAsync(record);
+                await _context.SaveChangesAsync();
                 return new CategoryViewModel(result.Entity);
             }
 
@@ -110,20 +109,20 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CategoryViewModel> UpdateCategory(long id, CategoryViewModel category)
         {
-            if (db != null && category != null && id > 0)
+            if (_context != null && category != null && id > 0)
             {
-                var found = await db.Categories.FindAsync(id);
+                var found = await _context.Categories.FindAsync(id);
                 if (found != null)
                 {
                     try
                     {
-                        var entry = db.Entry(found);
+                        var entry = _context.Entry(found);
                         entry.State = EntityState.Modified;
 
                         found.Title = category.Title;
                         found.UpdatedAt = DateTime.Now;
 
-                        await db.SaveChangesAsync();
+                        await _context.SaveChangesAsync();
 
                         // index articles
                         await BulkIndexArticles(id);
@@ -142,9 +141,9 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CategoryViewModel> GetCategory(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                var record = await db.Categories.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
+                var record = await _context.Categories.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
                     return new CategoryViewModel(record, false);
             }
@@ -155,7 +154,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetArticlesForCategory(long id, int skip, int take, string title = "",
            bool loadRelation = false, bool showTotal = false)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
                 if (skip < 0)
                     skip = 0;
@@ -163,7 +162,7 @@ namespace elasticsearch_netcore.Repositories
                     take = 10;
 
                 JArray articles = new JArray();
-                IQueryable<ArticlesCategory> table = db.ArticlesCategories.AsNoTracking().Where(a => a.CategoryId == id);
+                IQueryable<ArticlesCategory> table = _context.ArticlesCategories.AsNoTracking().Where(a => a.CategoryId == id);
 
                 if (!string.IsNullOrWhiteSpace(title))
                 {
@@ -199,10 +198,10 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<bool> DeleteCategory(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                db.Categories.Remove(new Category() { Id = id });
-                await db.SaveChangesAsync();
+                _context.Categories.Remove(new Category() { Id = id });
+                await _context.SaveChangesAsync();
                 return true;
             }
 
@@ -211,7 +210,7 @@ namespace elasticsearch_netcore.Repositories
 
         async Task BulkIndexArticles(long id)
         {
-            var records = await db.ArticlesCategories.AsNoTracking()
+            var records = await _context.ArticlesCategories.AsNoTracking()
                             .Where(a => a.CategoryId == id)
                             .Include(a => a.Article)
                             .ThenInclude(a => a.Authorships)

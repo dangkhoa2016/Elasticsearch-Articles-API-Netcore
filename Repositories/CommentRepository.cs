@@ -10,19 +10,17 @@ using System.Threading.Tasks;
 
 namespace elasticsearch_netcore.Repositories
 {
-    public class CommentRepository : ICommentRepository
+    public class CommentRepository : GenericRepository<Comment>, ICommentRepository
     {
-        private ElasticsearchDBContext db;
-
         public CommentRepository(ElasticsearchDBContext db)
+            : base(db)
         {
-            this.db = db;
         }
 
         public async Task<dynamic> GetComments(int skip, int take = 10, bool loadRelation = false,
             Expression<Func<Comment, bool>> filter = null, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -31,7 +29,7 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray comments = new JArray();
 
-                var table = db.Comments.AsQueryable().AsNoTracking();
+                var table = _context.Comments.AsQueryable().AsNoTracking();
                 if (loadRelation)
                     table = table.Include(a => a.Article).AsSplitQuery();
 
@@ -55,7 +53,7 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CommentViewModel> CreateComment(CommentViewModel comment)
         {
-            if (db != null && comment.ArticleId != null)
+            if (_context != null && comment.ArticleId != null)
             {
                 var record = new Comment();
 
@@ -68,8 +66,8 @@ namespace elasticsearch_netcore.Repositories
                 record.UpdatedAt = DateTime.Now;
                 record.CreatedAt = DateTime.Now;
 
-                var result = await db.Comments.AddAsync(record);
-                await db.SaveChangesAsync();
+                var result = await _context.Comments.AddAsync(record);
+                await _context.SaveChangesAsync();
                 return new CommentViewModel(result.Entity);
             }
 
@@ -78,12 +76,12 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CommentViewModel> UpdateComment(long id, CommentViewModel comment)
         {
-            if (db != null && comment != null && id > 0 && comment.ArticleId != null)
+            if (_context != null && comment != null && id > 0 && comment.ArticleId != null)
             {
-                var found = await db.Comments.FindAsync(id);
+                var found = await _context.Comments.FindAsync(id);
                 if (found != null)
                 {
-                    var entry = db.Entry(found);
+                    var entry = _context.Entry(found);
                     entry.State = EntityState.Modified;
 
                     found.ArticleId = comment.ArticleId;
@@ -94,7 +92,7 @@ namespace elasticsearch_netcore.Repositories
                     found.UserLocation = comment.UserLocation;
                     found.UpdatedAt = DateTime.Now;
 
-                    await db.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
                     return new CommentViewModel(found);
                 }
             }
@@ -104,9 +102,9 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<CommentViewModel> GetComment(long id, bool loadRelation)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                var table = db.Comments.AsQueryable().AsNoTracking();
+                var table = _context.Comments.AsQueryable().AsNoTracking();
                 if (loadRelation)
                     table = table.Include(a => a.Article).AsSplitQuery();
 
@@ -142,10 +140,10 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<bool> DeleteComment(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                db.Comments.Remove(new Comment() { Id = id });
-                await db.SaveChangesAsync();
+                _context.Comments.Remove(new Comment() { Id = id });
+                await _context.SaveChangesAsync();
                 return true;
             }
 

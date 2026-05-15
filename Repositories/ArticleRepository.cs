@@ -15,17 +15,16 @@ using Newtonsoft.Json;
 
 namespace elasticsearch_netcore.Repositories
 {
-    public class ArticleRepository : IArticleRepository
+    public class ArticleRepository : GenericRepository<Article>, IArticleRepository
     {
-        private ElasticsearchDBContext db;
         private readonly ILogger<ArticleRepository> _logger;
         private readonly Helpers.Helper _helper;
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _configuration;
 
         public ArticleRepository(ElasticsearchDBContext db, ILogger<ArticleRepository> logger, Helpers.Helper helper, IMemoryCache cache, IConfiguration configuration)
+            : base(db)
         {
-            this.db = db;
             _logger = logger;
             _helper = helper;
             _cache = cache;
@@ -57,7 +56,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetArticles(int skip, int take = 10, bool loadRelation = false,
             Expression<Func<Article, bool>> filter = null, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -65,7 +64,7 @@ namespace elasticsearch_netcore.Repositories
                     take = 10;
 
                 var cacheKey = $"articles_{skip}_{take}_{loadRelation}_{showTotal}_{filter?.ToString() ?? "nofilter"}";
-                
+
                 if (_cache.TryGetValue(cacheKey, out dynamic cachedResult))
                 {
                     _logger.LogInformation("Cache hit for articles list (skip: {Skip}, take: {Take})", skip, take);
@@ -76,7 +75,7 @@ namespace elasticsearch_netcore.Repositories
 
                 List<ArticleViewModel> articles = new List<ArticleViewModel>();
 
-                var table = db.Articles.AsQueryable().AsNoTracking();
+                var table = _context.Articles.AsQueryable().AsNoTracking();
 
                 if (loadRelation)
                 {
@@ -96,7 +95,7 @@ namespace elasticsearch_netcore.Repositories
                 dynamic result;
                 if (showTotal)
                 {
-                    var countQuery = db.Articles.AsNoTracking();
+                    var countQuery = _context.Articles.AsNoTracking();
                     if (filter != null)
                         countQuery = countQuery.Where(filter);
                     result = new { data = articles, total = await countQuery.CountAsync() };
@@ -116,7 +115,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetArticles(int skip, int take = 10,
             string title = "", bool loadRelation = false, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -128,9 +127,9 @@ namespace elasticsearch_netcore.Repositories
                 IQueryable<Article> table = null;
 
                 if (string.IsNullOrWhiteSpace(title))
-                    table = db.Articles.AsNoTracking();
+                    table = _context.Articles.AsNoTracking();
                 else
-                    table = db.Articles.AsNoTracking().Where(a => a.Title.Contains(title));
+                    table = _context.Articles.AsNoTracking().Where(a => a.Title.Contains(title));
 
                 if (loadRelation)
                 {
@@ -146,7 +145,7 @@ namespace elasticsearch_netcore.Repositories
 
                 if (showTotal)
                 {
-                    var countQuery = db.Articles.AsNoTracking();
+                    var countQuery = _context.Articles.AsNoTracking();
                     if (!string.IsNullOrWhiteSpace(title))
                         countQuery = countQuery.Where(a => a.Title.Contains(title));
                     return new { data = articles, total = await countQuery.CountAsync() };
@@ -160,15 +159,15 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<dynamic> GetCommentsForArticle(long id, int skip, int take, bool showTotal = false)
         {
-            if (db != null && id > 0)
-                return await (new CommentRepository(db)).GetComments(skip, take, false, c => c.ArticleId == id, showTotal);
+            if (_context != null && id > 0)
+                return await (new CommentRepository(_context)).GetComments(skip, take, false, c => c.ArticleId == id, showTotal);
 
             return null;
         }
 
         public async Task<ArticleViewModel> CreateArticle(ArticleViewModel article)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (string.IsNullOrWhiteSpace(article?.Title))
                     throw new ArgumentException("Title is required.", nameof(article.Title));
@@ -181,14 +180,12 @@ namespace elasticsearch_netcore.Repositories
                 record.Abstract = article.Abstract;
                 record.Shares = article.Shares;
                 record.PublishedOn = article.PublishedOn;
-                //record.UpdatedAt = DateTime.Now;
-                //record.CreatedAt = DateTime.Now;
 
                 UpdateCategoriesRelation(record, article.ArticlesCategories != null ? article.ArticlesCategories.ToList() : null);
                 UpdateAuthorsRelation(record, article.Authorships != null ? article.Authorships.ToList() : null);
 
-                var result = await db.Articles.AddAsync(record);
-                await db.SaveChangesAsync();
+                var result = await _context.Articles.AddAsync(record);
+                await _context.SaveChangesAsync();
 
                 await IndexDocument(result.Entity.Id);
 
@@ -202,14 +199,14 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<ArticleViewModel> UpdateArticle(long id, ArticleViewModel article)
         {
-            if (db != null && article != null && id > 0)
+            if (_context != null && article != null && id > 0)
             {
                 if (string.IsNullOrWhiteSpace(article?.Title))
                     throw new ArgumentException("Title is required.", nameof(article.Title));
                 if (string.IsNullOrWhiteSpace(article?.Content))
                     throw new ArgumentException("Content is required.", nameof(article.Content));
 
-                var found = await db.Articles.Include(a => a.ArticlesCategories).Include(a => a.Authorships).FirstOrDefaultAsync(a => a.Id == id);
+                var found = await _context.Articles.Include(a => a.ArticlesCategories).Include(a => a.Authorships).FirstOrDefaultAsync(a => a.Id == id);
                 if (found != null)
                 {
                     found.Title = article.Title;
@@ -218,12 +215,11 @@ namespace elasticsearch_netcore.Repositories
                     found.Shares = article.Shares;
                     found.PublishedOn = article.PublishedOn;
                     found.UpdatedAt = DateTime.Now;
-                    //found.CreatedAt = DateTime.Now;
 
                     UpdateCategoriesRelation(found, article.ArticlesCategories != null ? article.ArticlesCategories.ToList() : null);
                     UpdateAuthorsRelation(found, article.Authorships != null ? article.Authorships.ToList() : null);
 
-                    await db.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
 
                     await IndexDocument(found.Id);
 
@@ -238,10 +234,10 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<ArticleViewModel> GetArticle(long id, bool loadRelation)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
                 var cacheKey = $"article_{id}_{loadRelation}";
-                
+
                 if (_cache.TryGetValue(cacheKey, out ArticleViewModel cachedArticle))
                 {
                     _logger.LogInformation("Cache hit for article {ArticleId}", id);
@@ -250,7 +246,7 @@ namespace elasticsearch_netcore.Repositories
 
                 _logger.LogInformation("Cache miss for article {ArticleId}", id);
 
-                var table = db.Articles.AsQueryable().AsNoTracking();
+                var table = _context.Articles.AsQueryable().AsNoTracking();
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Authorships).ThenInclude(a => a.Author)
@@ -263,10 +259,10 @@ namespace elasticsearch_netcore.Repositories
                 if (record != null)
                 {
                     var article = new ArticleViewModel(record, true);
-                    
+
                     var cacheExpiration = _configuration.GetValue<int>("CacheSettings:ArticleExpirationMinutes", 15);
                     _cache.Set(cacheKey, article, TimeSpan.FromMinutes(cacheExpiration));
-                    
+
                     return article;
                 }
             }
@@ -276,18 +272,18 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<bool> DeleteArticle(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
                 try
                 {
-                    var lstAC = db.ArticlesCategories.Where(ac => ac.ArticleId == id).ToList();
-                    db.ArticlesCategories.RemoveRange(lstAC);
-                    var lstAA = db.Authorships.Where(aa => aa.ArticleId == id).ToList();
-                    db.Authorships.RemoveRange(lstAA);
-                    var lstACC = db.Comments.Where(acc => acc.ArticleId == id).ToList();
-                    db.Comments.RemoveRange(lstACC);
-                    db.Articles.Remove(new Article() { Id = id });
-                    await db.SaveChangesAsync();
+                    var lstAC = _context.ArticlesCategories.Where(ac => ac.ArticleId == id).ToList();
+                    _context.ArticlesCategories.RemoveRange(lstAC);
+                    var lstAA = _context.Authorships.Where(aa => aa.ArticleId == id).ToList();
+                    _context.Authorships.RemoveRange(lstAA);
+                    var lstACC = _context.Comments.Where(acc => acc.ArticleId == id).ToList();
+                    _context.Comments.RemoveRange(lstACC);
+                    _context.Articles.Remove(new Article() { Id = id });
+                    await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
                 {

@@ -10,19 +10,17 @@ using System.Threading.Tasks;
 
 namespace elasticsearch_netcore.Repositories
 {
-    public class AuthorshipRepository : IAuthorshipRepository
+    public class AuthorshipRepository : GenericRepository<Authorship>, IAuthorshipRepository
     {
-        private ElasticsearchDBContext db;
-
         public AuthorshipRepository(ElasticsearchDBContext db)
+            : base(db)
         {
-            this.db = db;
         }
 
         public async Task<dynamic> GetAuthorships(int skip, int take = 10, bool loadRelation = false,
             Expression<Func<Authorship, bool>> filter = null, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -31,7 +29,7 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray authorships = new JArray();
 
-                var table = db.Authorships.AsQueryable().AsNoTracking();
+                var table = _context.Authorships.AsQueryable().AsNoTracking();
 
                 if (loadRelation)
                 {
@@ -59,8 +57,13 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorshipViewModel> CreateAuthorship(AuthorshipViewModel authorship)
         {
-            if (db != null)
+            if (_context != null)
             {
+                var existing = await _context.Authorships
+                    .FirstOrDefaultAsync(a => a.ArticleId == authorship.ArticleId && a.AuthorId == authorship.AuthorId);
+                if (existing != null)
+                    return null; // duplicate
+
                 var record = new Authorship();
 
                 record.ArticleId = authorship.ArticleId;
@@ -68,8 +71,8 @@ namespace elasticsearch_netcore.Repositories
                 record.UpdatedAt = DateTime.Now;
                 record.CreatedAt = DateTime.Now;
 
-                var result = await db.Authorships.AddAsync(record);
-                await db.SaveChangesAsync();
+                var result = await _context.Authorships.AddAsync(record);
+                await _context.SaveChangesAsync();
                 return new AuthorshipViewModel(result.Entity);
             }
 
@@ -78,19 +81,19 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorshipViewModel> UpdateAuthorship(long id, AuthorshipViewModel authorship)
         {
-            if (db != null && authorship != null && id > 0)
+            if (_context != null && authorship != null && id > 0)
             {
-                var found = await db.Authorships.FindAsync(id);
+                var found = await _context.Authorships.FindAsync(id);
                 if (found != null)
                 {
-                    var entry = db.Entry(found);
+                    var entry = _context.Entry(found);
                     entry.State = EntityState.Modified;
 
                     found.ArticleId = authorship.ArticleId;
                     found.AuthorId = authorship.AuthorId;
                     found.UpdatedAt = DateTime.Now;
 
-                    await db.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
                     return new AuthorshipViewModel(found);
                 }
             }
@@ -100,9 +103,9 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorshipViewModel> GetAuthorship(long id, bool loadRelation)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                var table = db.Authorships.AsQueryable().AsNoTracking();
+                var table = _context.Authorships.AsQueryable().AsNoTracking();
                 if (loadRelation)
                 {
                     table = table.Include(a => a.Article)
@@ -140,10 +143,10 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<bool> DeleteAuthorship(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                db.Authorships.Remove(new Authorship() { Id = id });
-                await db.SaveChangesAsync();
+                _context.Authorships.Remove(new Authorship() { Id = id });
+                await _context.SaveChangesAsync();
                 return true;
             }
 

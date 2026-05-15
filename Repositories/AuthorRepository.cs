@@ -13,24 +13,22 @@ using System.Threading.Tasks;
 
 namespace elasticsearch_netcore.Repositories
 {
-    public class AuthorRepository : IAuthorRepository
+    public class AuthorRepository : GenericRepository<Author>, IAuthorRepository
     {
-        private ElasticsearchDBContext db;
-
         private readonly Helpers.Helper _helper;
         private readonly ILogger<AuthorRepository> _logger;
 
         public AuthorRepository(ElasticsearchDBContext db, ILogger<AuthorRepository> logger, Helpers.Helper helper)
+            : base(db)
         {
-            this.db = db;
-            _logger = logger;
             _helper = helper;
+            _logger = logger;
         }
 
         public async Task<dynamic> GetAuthors(int skip, int take = 10,
             Expression<Func<Author, bool>> filter = null, bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -39,7 +37,7 @@ namespace elasticsearch_netcore.Repositories
 
                 List<AuthorViewModel> authors = new List<AuthorViewModel>();
 
-                var table = db.Authors.AsQueryable().AsNoTracking();
+                var table = _context.Authors.AsQueryable().AsNoTracking();
 
                 if (filter != null)
                     table = table.Where(filter);
@@ -61,7 +59,7 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<dynamic> GetAuthors(int skip, int take = 10, string name = "", bool showTotal = false)
         {
-            if (db != null)
+            if (_context != null)
             {
                 if (skip < 0)
                     skip = 0;
@@ -70,7 +68,7 @@ namespace elasticsearch_netcore.Repositories
 
                 JArray authors = new JArray();
 
-                IQueryable<Author> table = db.Authors.AsNoTracking();
+                IQueryable<Author> table = _context.Authors.AsNoTracking();
 
                 if (!string.IsNullOrWhiteSpace(name))
                 {
@@ -94,7 +92,7 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorViewModel> CreateAuthor(AuthorViewModel author)
         {
-            if (db != null)
+            if (_context != null)
             {
                 var record = new Author();
 
@@ -103,8 +101,8 @@ namespace elasticsearch_netcore.Repositories
                 record.UpdatedAt = DateTime.Now;
                 record.CreatedAt = DateTime.Now;
 
-                var result = await db.Authors.AddAsync(record);
-                await db.SaveChangesAsync();
+                var result = await _context.Authors.AddAsync(record);
+                await _context.SaveChangesAsync();
                 return new AuthorViewModel(result.Entity);
             }
 
@@ -113,21 +111,21 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorViewModel> UpdateAuthor(long id, AuthorViewModel author)
         {
-            if (db != null && author != null && id > 0)
+            if (_context != null && author != null && id > 0)
             {
-                var found = await db.Authors.FindAsync(id);
+                var found = await _context.Authors.FindAsync(id);
                 if (found != null)
                 {
                     try
                     {
-                        var entry = db.Entry(found);
+                        var entry = _context.Entry(found);
                         entry.State = EntityState.Modified;
 
                         found.FirstName = author.FirstName;
                         found.LastName = author.LastName;
                         found.UpdatedAt = DateTime.Now;
 
-                        await db.SaveChangesAsync();
+                        await _context.SaveChangesAsync();
 
                         // index articles
                         await BulkIndexArticles(id);
@@ -146,9 +144,9 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<AuthorViewModel> GetAuthor(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                var record = await db.Authors.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
+                var record = await _context.Authors.AsQueryable().AsNoTracking().SingleOrDefaultAsync(a => a.Id == id);
                 if (record != null)
                     return new AuthorViewModel(record, false);
             }
@@ -159,7 +157,7 @@ namespace elasticsearch_netcore.Repositories
         public async Task<dynamic> GetArticlesForAuthor(long id, int skip, int take, string title = "",
             bool loadRelation = false, bool showTotal = false)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
                 if (skip < 0)
                     skip = 0;
@@ -167,7 +165,7 @@ namespace elasticsearch_netcore.Repositories
                     take = 10;
 
                 JArray articles = new JArray();
-                IQueryable<Authorship> table = db.Authorships.AsNoTracking().Where(a => a.AuthorId == id);
+                IQueryable<Authorship> table = _context.Authorships.AsNoTracking().Where(a => a.AuthorId == id);
 
                 if (!string.IsNullOrWhiteSpace(title))
                 {
@@ -203,10 +201,10 @@ namespace elasticsearch_netcore.Repositories
 
         public async Task<bool> DeleteAuthor(long id)
         {
-            if (db != null && id > 0)
+            if (_context != null && id > 0)
             {
-                db.Authors.Remove(new Author() { Id = id });
-                await db.SaveChangesAsync();
+                _context.Authors.Remove(new Author() { Id = id });
+                await _context.SaveChangesAsync();
                 return true;
             }
 
@@ -215,7 +213,7 @@ namespace elasticsearch_netcore.Repositories
 
         async Task BulkIndexArticles(long id)
         {
-            var records = await db.Authorships.AsNoTracking()
+            var records = await _context.Authorships.AsNoTracking()
                             .Where(a => a.AuthorId == id)
                             .Include(a => a.Article)
                             .ThenInclude(a => a.ArticlesCategories)
