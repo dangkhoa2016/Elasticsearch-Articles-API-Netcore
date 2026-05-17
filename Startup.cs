@@ -20,6 +20,7 @@ using FluentValidation.AspNetCore;
 using AspNetCoreRateLimit;
 using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Mappings;
+using elasticsearch_netcore.HealthChecks;
 
 namespace elasticsearch_netcore
 {
@@ -141,6 +142,12 @@ namespace elasticsearch_netcore
                 options.IncludeSubDomains = true;
                 options.Preload = true;
             });
+
+            services.AddTransient<HealthChecks.IElasticsearchHealthClient, HealthChecks.NESTElasticsearchHealthClient>();
+
+            services.AddHealthChecks()
+                .AddCheck<DatabaseHealthCheck>("Database")
+                .AddCheck<ElasticsearchHealthCheck>("Elasticsearch");
 
             services.AddControllers();
         }
