@@ -24,10 +24,10 @@ namespace elasticsearch_netcore
         public static async Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .CreateLogger();
+                .ReadFrom.Configuration(Configuration)
+                .Enrich.WithProperty("Application", "ElasticsearchArticlesApi")
+                .Enrich.WithProperty("Environment", Configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production")
+                .CreateLogger();
 
             try
             {

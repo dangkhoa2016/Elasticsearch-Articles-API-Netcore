@@ -151,12 +151,15 @@ namespace elasticsearch_netcore
             // Security Headers Middleware
             app.UseMiddleware<Middleware.SecurityHeadersMiddleware>();
 
+            // Correlation ID Middleware (must be early to propagate to all subsequent middleware)
+            app.UseMiddleware<Middleware.CorrelationIdMiddleware>();
+
             app.UseMiddleware<Middleware.ExceptionHandlingMiddleware>();
 
             // Rate Limiting Middleware
             app.UseIpRateLimiting();
 
-            //Handle 404 errors
+            // Handle 404 errors
             app.Use(async (ctx, next) =>
             {
                 await next();
@@ -169,6 +172,9 @@ namespace elasticsearch_netcore
 
             // Response Compression Middleware
             app.UseResponseCompression();
+
+            // Request/Response Logging (after compression to capture actual response)
+            app.UseMiddleware<Middleware.RequestResponseLoggingMiddleware>();
 
             app.UseSerilogRequestLogging();
 
