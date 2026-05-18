@@ -21,6 +21,9 @@ using AspNetCoreRateLimit;
 using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Mappings;
 using elasticsearch_netcore.HealthChecks;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 
 namespace elasticsearch_netcore
 {
@@ -149,6 +152,73 @@ namespace elasticsearch_netcore
                 .AddCheck<DatabaseHealthCheck>("Database")
                 .AddCheck<ElasticsearchHealthCheck>("Elasticsearch");
 
+            // OpenTelemetry Configuration
+            var serviceName = Configuration["OpenTelemetry:ServiceName"] ?? "ElasticsearchArticlesApi";
+            var serviceVersion = Configuration["OpenTelemetry:ServiceVersion"] ?? "1.0.0";
+            var tracingEnabled = Configuration.GetValue("OpenTelemetry:Tracing:Enabled", true);
+            var metricsEnabled = Configuration.GetValue("OpenTelemetry:Metrics:Enabled", true);
+            var sampleRate = Configuration.GetValue("OpenTelemetry:Tracing:SampleRate", 1.0);
+            var otlpEndpoint = Configuration["OpenTelemetry:Tracing:OtlpEndpoint"] ?? "http://localhost:4317";
+
+            if (tracingEnabled)
+            {
+                services.AddOpenTelemetry()
+                    .ConfigureResource(resource => resource
+                        .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
+                    .WithTracing(tracing =>
+                    {
+                        tracing
+                            .SetSampler(new OpenTelemetry.Trace.ParentBasedSampler(
+                                new OpenTelemetry.Trace.TraceIdRatioBasedSampler(sampleRate)))
+                            .AddAspNetCoreInstrumentation(options =>
+                            {
+                                options.RecordException = true;
+                                options.EnrichWithHttpRequest = (activity, request) =>
+                                {
+                                    activity.SetTag("http.route", request.Path);
+                                };
+                            })
+                            .AddHttpClientInstrumentation()
+                            .AddEntityFrameworkCoreInstrumentation(options =>
+                            {
+                                options.SetDbStatementForText = true;
+                            })
+                            .AddSource("ElasticsearchArticlesApi")
+                            .AddConsoleExporter();
+
+                        // Add OTLP exporter if endpoint is configured
+                        if (!string.IsNullOrEmpty(otlpEndpoint))
+                        {
+                            tracing.AddOtlpExporter(otlpOptions =>
+                            {
+                                otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                            });
+                        }
+                    });
+            }
+
+            if (metricsEnabled)
+            {
+                services.AddOpenTelemetry()
+                    .WithMetrics(metrics =>
+                    {
+                        metrics
+                            .AddAspNetCoreInstrumentation()
+                            .AddHttpClientInstrumentation()
+                            .AddMeter("ElasticsearchArticlesApi")
+                            .AddConsoleExporter();
+
+                        // Add OTLP exporter for metrics
+                        if (!string.IsNullOrEmpty(otlpEndpoint))
+                        {
+                            metrics.AddOtlpExporter(otlpOptions =>
+                            {
+                                otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                            });
+                        }
+                    });
+            }
+
             services.AddControllers();
         }
 
@@ -160,6 +230,9 @@ namespace elasticsearch_netcore
 
             // Correlation ID Middleware (must be early to propagate to all subsequent middleware)
             app.UseMiddleware<Middleware.CorrelationIdMiddleware>();
+
+            // Telemetry Enrichment Middleware
+            app.UseMiddleware<Telemetry.TelemetryEnrichmentMiddleware>();
 
             app.UseMiddleware<Middleware.ExceptionHandlingMiddleware>();
 
