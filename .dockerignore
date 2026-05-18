@@ -1,0 +1,49 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Build
+bin/
+obj/
+**/bin/
+**/obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+.idea/
+
+# Test
+TestResults/
+**/TestResults/
+coverage/
+*.coverage
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (avoid recursive copy)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+docs/
+az/
+*.md
+!README.md
+
+# Misc
+*.swp
+*.swo
+*~
+nuget.config
