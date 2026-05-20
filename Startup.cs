@@ -22,6 +22,7 @@ using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Mappings;
 using elasticsearch_netcore.HealthChecks;
 using elasticsearch_netcore.Factories;
+using elasticsearch_netcore.Resilience;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
@@ -84,6 +85,9 @@ namespace elasticsearch_netcore
             services
                 .AddDbContext<Models.ElasticsearchDBContext>(options =>
                     DatabaseProviderFactory.ConfigureProvider(options, Configuration));
+
+            // Register database resilience pipeline
+            services.AddSingleton(sp => DatabaseResilience.GetPipeline(Configuration));
 
             services.AddElasticsearch(Configuration);
             services.AddSingleton<Helpers.Helper>();
