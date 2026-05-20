@@ -21,6 +21,7 @@ using AspNetCoreRateLimit;
 using elasticsearch_netcore.Constants;
 using elasticsearch_netcore.Mappings;
 using elasticsearch_netcore.HealthChecks;
+using elasticsearch_netcore.Factories;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
@@ -81,7 +82,8 @@ namespace elasticsearch_netcore
             }));
 
             services
-                .AddDbContext<Models.ElasticsearchDBContext>(item => item.UseSqlite(Configuration.GetConnectionString("DBConnectionString")));
+                .AddDbContext<Models.ElasticsearchDBContext>(options =>
+                    DatabaseProviderFactory.ConfigureProvider(options, Configuration));
 
             services.AddElasticsearch(Configuration);
             services.AddSingleton<Helpers.Helper>();

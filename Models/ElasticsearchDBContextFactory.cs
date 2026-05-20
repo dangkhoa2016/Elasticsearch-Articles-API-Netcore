@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using elasticsearch_netcore.Factories;
 
 namespace elasticsearch_netcore.Models
 {
@@ -20,14 +21,7 @@ namespace elasticsearch_netcore.Models
                 .Build();
 
             var optionsBuilder = new DbContextOptionsBuilder<ElasticsearchDBContext>();
-            var connectionString = configuration.GetConnectionString("DBConnectionString");
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                connectionString = "Data Source=./DB/development.sqlite3;";
-            }
-
-            optionsBuilder.UseSqlite(connectionString);
+            DatabaseProviderFactory.ConfigureProvider(optionsBuilder, configuration);
 
             return new ElasticsearchDBContext(optionsBuilder.Options);
         }

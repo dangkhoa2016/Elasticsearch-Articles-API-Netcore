@@ -1,7 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using elasticsearch_netcore.Factories;
 
 #nullable disable
 
@@ -9,6 +11,18 @@ namespace elasticsearch_netcore.Models
 {
     public partial class ElasticsearchDBContext : DbContext
     {
+        private static readonly IConfiguration _configuration;
+
+        static ElasticsearchDBContext()
+        {
+            _configuration = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
+        }
+
         public ElasticsearchDBContext()
         {
         }
@@ -18,14 +32,14 @@ namespace elasticsearch_netcore.Models
         {
         }
 
-        public static readonly LoggerFactory _myLoggerFactory = new LoggerFactory(new[] {
-            new Microsoft.Extensions.Logging.Debug.DebugLoggerProvider()
-        });
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            if (!optionsBuilder.IsConfigured)
+            {
+                DatabaseProviderFactory.ConfigureProvider(optionsBuilder, _configuration);
+            }
+
             optionsBuilder.EnableSensitiveDataLogging(true)
-                            .UseLoggerFactory(_myLoggerFactory)
                             .LogTo(Console.WriteLine);
         }
 

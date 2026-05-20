@@ -11,7 +11,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DBConnectionString=Data Source=/app/data/development.sqlite3;
+      - DatabaseProvider__Provider=PostgreSQL
+      - ConnectionStrings__DBConnectionString=Host=postgres;Port=5432;Database=articles_api;Username=postgres;Password=postgres
       - ElasticsearchSettings__url=http://elasticsearch:9200
       - ElasticsearchSettings__defaultIndex=articles
       - JwtSettings__Secret=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
@@ -22,10 +23,11 @@ services:
       - AllowedOrigins__0=http://localhost:3000
       - AllowedOrigins__1=http://localhost:8080
     volumes:
-      - api-data:/app/data
       - api-logs:/app/logs
     depends_on:
       elasticsearch:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - app-network
@@ -66,6 +68,26 @@ services:
       - app-network
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=articles_api
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-network
+    restart: unless-stopped
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
@@ -79,10 +101,10 @@ services:
     restart: unless-stopped
 
 volumes:
-  api-data:
   api-logs:
   elasticsearch-data:
   redis-data:
+  postgres-data:
 
 networks:
   app-network:
