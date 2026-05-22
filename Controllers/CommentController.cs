@@ -32,7 +32,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -50,7 +50,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(CommentRepository.ConvertToJObject(record, loadRelation).ToString(Formatting.None), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -64,7 +64,7 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await commentRepository.DeleteComment(id);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -85,7 +85,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return comment;
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -101,7 +101,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetComment", new { id = comment.Id }, comment);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }

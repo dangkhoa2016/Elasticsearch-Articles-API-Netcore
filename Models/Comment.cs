@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-#nullable disable
+#nullable enable
 
 namespace elasticsearch_netcore.Models
 {
@@ -18,9 +18,9 @@ namespace elasticsearch_netcore.Models
         [Column("body", TypeName = "text")]
         public string? Body { get; set; }
         [Column("user", TypeName = "varchar")]
-        public string User { get; set; }
+        public string User { get; set; } = null!;
         [Column("user_location", TypeName = "varchar")]
-        public string UserLocation { get; set; }
+        public string UserLocation { get; set; } = null!;
         [Column("stars", TypeName = "integer")]
         public long? Stars { get; set; }
         [Column("pick", TypeName = "boolean")]
@@ -34,6 +34,6 @@ namespace elasticsearch_netcore.Models
 
         [ForeignKey(nameof(ArticleId))]
         [InverseProperty("Comments")]
-        public virtual Article Article { get; set; }
+        public virtual Article Article { get; set; } = null!;
     }
 }

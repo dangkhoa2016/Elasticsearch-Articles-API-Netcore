@@ -39,7 +39,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -57,7 +57,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Ok(record);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -83,7 +83,7 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await authorRepository.DeleteAuthor(id);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -107,7 +107,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return author;
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -126,7 +126,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }

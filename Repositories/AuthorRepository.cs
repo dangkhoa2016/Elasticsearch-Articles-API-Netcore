@@ -137,7 +137,7 @@ namespace elasticsearch_netcore.Repositories
 
                         return new AuthorViewModel(found);
                     }
-                    catch (Exception ex)
+                    catch
                     {
                     }
                 }

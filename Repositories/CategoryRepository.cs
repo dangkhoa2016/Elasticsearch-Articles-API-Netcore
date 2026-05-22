@@ -133,7 +133,7 @@ namespace elasticsearch_netcore.Repositories
 
                         return new CategoryViewModel(found);
                     }
-                    catch (Exception ex)
+                    catch
                     {
                     }
                 }

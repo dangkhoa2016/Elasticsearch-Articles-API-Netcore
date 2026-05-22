@@ -216,7 +216,7 @@ namespace elasticsearch_netcore.Repositories
                     db.Articles.Remove(new Article() { Id = id });
                     await db.SaveChangesAsync();
                 }
-                catch (Exception ex)
+                catch
                 {
                 }
 

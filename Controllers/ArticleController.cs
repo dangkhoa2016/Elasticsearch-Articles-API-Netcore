@@ -53,7 +53,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -73,7 +73,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(article.ToString(Formatting.None), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -100,7 +100,7 @@ namespace elasticsearch_netcore.Controllers
                 return Content(JsonConvert.SerializeObject(new { msg = "Article with id:[" + id + "] has been deleted." }),
                     MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -127,7 +127,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return record;
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -148,7 +148,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetArticle", new { id = record.Id }, record);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -189,7 +189,7 @@ namespace elasticsearch_netcore.Controllers
                 return Content(JsonConvert.SerializeObject(new { msg = $"Bulk import starting in the background... at {startAt}" }),
                   MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -216,7 +216,7 @@ namespace elasticsearch_netcore.Controllers
                                 categoryId = c.Value<long?>("id");
                         }
                     }
-                    catch (Exception ex) { }
+                    catch { }
 
                     if (!categoryId.HasValue)
                         return null;
@@ -242,7 +242,7 @@ namespace elasticsearch_netcore.Controllers
                                 authorId = a.Value<long?>("id");
                         }
                     }
-                    catch (Exception ex) { }
+                    catch { }
 
                     if (!authorId.HasValue)
                         return null;

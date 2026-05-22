@@ -35,7 +35,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -65,7 +65,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Ok(record);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -79,7 +79,7 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await categoryRepository.DeleteCategory(id);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -100,7 +100,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return category;
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -116,7 +116,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return CreatedAtAction("GetCategory", new { id = category.Id }, category);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }

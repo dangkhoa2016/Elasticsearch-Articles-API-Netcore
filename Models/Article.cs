@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 
-#nullable disable
+#nullable enable
 
 namespace elasticsearch_netcore.Models
 {
@@ -23,10 +23,10 @@ namespace elasticsearch_netcore.Models
         public long Id { get; set; }
         [Required]
         [Column("title", TypeName = "varchar")]
-        public string Title { get; set; }
+        public string Title { get; set; } = null!;
         [Required]
         [Column("content", TypeName = "text")]
-        public string Content { get; set; }
+        public string Content { get; set; } = null!;
         [Column("published_on", TypeName = "date")]
         public DateTime? PublishedOn { get; set; }
         [Column("created_at", TypeName = "datetime")]

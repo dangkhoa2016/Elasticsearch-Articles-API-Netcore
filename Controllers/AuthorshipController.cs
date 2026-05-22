@@ -31,7 +31,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(JsonConvert.SerializeObject(records), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -50,7 +50,7 @@ namespace elasticsearch_netcore.Controllers
 
                 return Content(AuthorshipRepository.ConvertToJObject(record, loadRelation).ToString(Formatting.None), MediaTypeNames.Application.Json);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -64,7 +64,7 @@ namespace elasticsearch_netcore.Controllers
             {
                 return await authorshipRepository.DeleteAuthorship(id);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -86,7 +86,7 @@ namespace elasticsearch_netcore.Controllers
                 return Content(AuthorshipRepository.ConvertToJObject(authorship, false).ToString(Formatting.None), MediaTypeNames.Application.Json);
                 //return authorship;
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
@@ -103,7 +103,7 @@ namespace elasticsearch_netcore.Controllers
                 return Content(AuthorshipRepository.ConvertToJObject(authorship, false).ToString(Formatting.None), MediaTypeNames.Application.Json);
                 //return CreatedAtAction("GetAuthorship", new { id = authorship.Id }, authorship);
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
