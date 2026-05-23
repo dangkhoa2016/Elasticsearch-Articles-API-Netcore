@@ -11,6 +11,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// Integration tests for the Articles API endpoints.
 /// Tests authentication requirements, CRUD operations, and pagination.
 /// </summary>
+[Collection("Integration")]
 public class ArticlesApiTests : ApiTestBase
 {
     public ArticlesApiTests(TestWebApplicationFactory factory) : base(factory)

@@ -10,6 +10,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// Since Elasticsearch may not be available during testing,
 /// these tests verify the client configuration and error handling.
 /// </summary>
+[Collection("Integration")]
 public class ElasticsearchTests : TestBase
 {
     public ElasticsearchTests(TestWebApplicationFactory factory) : base(factory)

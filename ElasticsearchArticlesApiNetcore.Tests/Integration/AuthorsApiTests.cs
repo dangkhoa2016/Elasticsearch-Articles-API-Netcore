@@ -7,6 +7,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// <summary>
 /// Integration tests for the Authors API endpoints.
 /// </summary>
+[Collection("Integration")]
 public class AuthorsApiTests : ApiTestBase
 {
     public AuthorsApiTests(TestWebApplicationFactory factory) : base(factory)

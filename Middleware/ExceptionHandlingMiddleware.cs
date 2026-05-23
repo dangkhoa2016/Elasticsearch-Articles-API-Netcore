@@ -34,6 +34,12 @@ namespace elasticsearch_netcore.Middleware
                     "An unexpected error occurred. Please try again later.",
                     (int)HttpStatusCode.InternalServerError
                 );
+
+                if (context.Response.HasStarted)
+                {
+                    _logger.LogWarning("Response has already started, cannot write error response.");
+                    throw;
+                }
                 
                 context.Response.StatusCode = errorResponse.StatusCode;
                 context.Response.ContentType = "application/json";

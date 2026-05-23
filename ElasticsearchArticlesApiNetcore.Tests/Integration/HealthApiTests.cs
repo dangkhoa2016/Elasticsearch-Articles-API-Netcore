@@ -18,6 +18,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// <summary>
 /// Integration tests for HealthController API endpoints.
 /// </summary>
+[Collection("Integration")]
 public class HealthApiTests : TestBase
 {
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerOptions.Default)

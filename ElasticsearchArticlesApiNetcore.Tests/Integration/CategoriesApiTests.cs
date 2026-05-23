@@ -7,6 +7,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// <summary>
 /// Integration tests for the Categories API endpoints.
 /// </summary>
+[Collection("Integration")]
 public class CategoriesApiTests : ApiTestBase
 {
     public CategoriesApiTests(TestWebApplicationFactory factory) : base(factory)

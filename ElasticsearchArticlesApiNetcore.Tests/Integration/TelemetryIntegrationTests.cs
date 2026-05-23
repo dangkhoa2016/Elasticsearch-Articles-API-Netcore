@@ -7,6 +7,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// Integration tests for OpenTelemetry instrumentation.
 /// Verifies that HTTP requests are properly instrumented.
 /// </summary>
+[Collection("Integration")]
 public class TelemetryIntegrationTests : TestBase
 {
     public TelemetryIntegrationTests(TestWebApplicationFactory factory) : base(factory)

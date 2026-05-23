@@ -40,12 +40,25 @@ namespace elasticsearch_netcore.Middleware
                 await _next(context);
 
                 stopwatch.Stop();
-                await LogResponse(context, stopwatch.Elapsed, correlationId);
+                await LogResponse(responseBody, context, stopwatch.Elapsed, correlationId);
+            }
+            catch
+            {
+                if (responseBody.CanSeek)
+                {
+                    responseBody.Seek(0, SeekOrigin.Begin);
+                    await responseBody.CopyToAsync(originalBodyStream);
+                }
+                context.Response.Body = originalBodyStream;
+                throw;
             }
             finally
             {
-                responseBody.Seek(0, SeekOrigin.Begin);
-                await responseBody.CopyToAsync(originalBodyStream);
+                if (responseBody.CanSeek)
+                {
+                    responseBody.Seek(0, SeekOrigin.Begin);
+                    await responseBody.CopyToAsync(originalBodyStream);
+                }
                 context.Response.Body = originalBodyStream;
             }
         }
@@ -60,9 +73,12 @@ namespace elasticsearch_netcore.Middleware
                 correlationId);
         }
 
-        private Task LogResponse(HttpContext context, TimeSpan elapsed, string correlationId)
+        private Task LogResponse(MemoryStream responseBody, HttpContext context, TimeSpan elapsed, string correlationId)
         {
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            if (!responseBody.CanSeek)
+                return Task.CompletedTask;
+
+            responseBody.Seek(0, SeekOrigin.Begin);
 
             var statusCode = context.Response.StatusCode;
             var logLevel = statusCode >= 500
@@ -79,7 +95,8 @@ namespace elasticsearch_netcore.Middleware
                 elapsed.TotalMilliseconds,
                 correlationId);
 
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            if (responseBody.CanSeek)
+                responseBody.Seek(0, SeekOrigin.Begin);
             return Task.CompletedTask;
         }
     }

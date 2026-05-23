@@ -9,6 +9,7 @@ namespace ElasticsearchArticlesApiNetcore.Tests.Integration;
 /// Database integration tests using in-memory SQLite.
 /// Tests direct repository/database operations.
 /// </summary>
+[Collection("Integration")]
 public class DatabaseTests : TestBase
 {
     public DatabaseTests(TestWebApplicationFactory factory) : base(factory)
