@@ -31,6 +31,8 @@ namespace elasticsearch_netcore
 {
     public class Startup
     {
+        private bool _responseCompressionEnabled = true;
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -49,22 +51,26 @@ namespace elasticsearch_netcore
             services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
             // Response Compression
-            services.AddResponseCompression(options =>
+            _responseCompressionEnabled = Configuration.GetValue("ResponseCompression:Enabled", true);
+            if (_responseCompressionEnabled)
             {
-                options.EnableForHttps = true;
-                options.Providers.Add<GzipCompressionProvider>();
-                options.Providers.Add<BrotliCompressionProvider>();
-            });
+                services.AddResponseCompression(options =>
+                {
+                    options.EnableForHttps = true;
+                    options.Providers.Add<GzipCompressionProvider>();
+                    options.Providers.Add<BrotliCompressionProvider>();
+                });
 
-            services.Configure<GzipCompressionProviderOptions>(options =>
-            {
-                options.Level = System.IO.Compression.CompressionLevel.Optimal;
-            });
+                services.Configure<GzipCompressionProviderOptions>(options =>
+                {
+                    options.Level = System.IO.Compression.CompressionLevel.Optimal;
+                });
 
-            services.Configure<BrotliCompressionProviderOptions>(options =>
-            {
-                options.Level = System.IO.Compression.CompressionLevel.Optimal;
-            });
+                services.Configure<BrotliCompressionProviderOptions>(options =>
+                {
+                    options.Level = System.IO.Compression.CompressionLevel.Optimal;
+                });
+            }
 
             services.AddCors(option => option.AddPolicy("APIPolicy", builder =>
             {
@@ -257,7 +263,10 @@ namespace elasticsearch_netcore
             });
 
             // Response Compression Middleware
-            app.UseResponseCompression();
+            if (_responseCompressionEnabled)
+            {
+                app.UseResponseCompression();
+            }
 
             // Request/Response Logging (after compression to capture actual response)
             app.UseMiddleware<Middleware.RequestResponseLoggingMiddleware>();
