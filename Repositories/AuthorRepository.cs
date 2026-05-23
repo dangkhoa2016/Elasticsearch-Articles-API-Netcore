@@ -203,7 +203,11 @@ namespace elasticsearch_netcore.Repositories
         {
             if (_context != null && id > 0)
             {
-                _context.Authors.Remove(new Author() { Id = id });
+                var record = await _context.Authors.FindAsync(id);
+                if (record == null)
+                    return false;
+
+                _context.Authors.Remove(record);
                 await _context.SaveChangesAsync();
                 return true;
             }

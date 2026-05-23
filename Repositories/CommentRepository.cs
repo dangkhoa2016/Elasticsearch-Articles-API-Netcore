@@ -146,7 +146,11 @@ namespace elasticsearch_netcore.Repositories
         {
             if (_context != null && id > 0)
             {
-                _context.Comments.Remove(new Comment() { Id = id });
+                var record = await _context.Comments.FindAsync(id);
+                if (record == null)
+                    return false;
+
+                _context.Comments.Remove(record);
                 await _context.SaveChangesAsync();
                 return true;
             }

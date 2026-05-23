@@ -68,7 +68,10 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                return await _authorshipRepository.DeleteAuthorship(id);
+                var result = await _authorshipRepository.DeleteAuthorship(id);
+                if (!result)
+                    return NotFound();
+                return result;
             }
             catch (Exception ex)
             {

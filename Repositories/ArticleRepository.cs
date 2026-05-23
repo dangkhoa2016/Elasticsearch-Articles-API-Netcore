@@ -275,21 +275,18 @@ namespace elasticsearch_netcore.Repositories
         {
             if (_context != null && id > 0)
             {
-                try
-                {
-                    var lstAC = _context.ArticlesCategories.Where(ac => ac.ArticleId == id).ToList();
-                    _context.ArticlesCategories.RemoveRange(lstAC);
-                    var lstAA = _context.Authorships.Where(aa => aa.ArticleId == id).ToList();
-                    _context.Authorships.RemoveRange(lstAA);
-                    var lstACC = _context.Comments.Where(acc => acc.ArticleId == id).ToList();
-                    _context.Comments.RemoveRange(lstACC);
-                    _context.Articles.Remove(new Article() { Id = id });
-                    await _context.SaveChangesAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error deleting article {ArticleId}", id);
-                }
+                var article = await _context.Articles.FindAsync(id);
+                if (article == null)
+                    return false;
+
+                var lstAC = _context.ArticlesCategories.Where(ac => ac.ArticleId == id).ToList();
+                _context.ArticlesCategories.RemoveRange(lstAC);
+                var lstAA = _context.Authorships.Where(aa => aa.ArticleId == id).ToList();
+                _context.Authorships.RemoveRange(lstAA);
+                var lstACC = _context.Comments.Where(acc => acc.ArticleId == id).ToList();
+                _context.Comments.RemoveRange(lstACC);
+                _context.Articles.Remove(article);
+                await _context.SaveChangesAsync();
 
                 await _helper.RemoveIndexDocument(id.ToString());
                 return true;

@@ -93,7 +93,9 @@ namespace elasticsearch_netcore.Controllers
         {
             try
             {
-                await _articleService.DeleteArticleAsync(id);
+                var result = await _articleService.DeleteArticleAsync(id);
+                if (!result)
+                    return NotFound();
                 return Content(JsonConvert.SerializeObject(new { msg = "Article with id:[" + id + "] has been deleted." }),
                     MediaTypeNames.Application.Json);
             }

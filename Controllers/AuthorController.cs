@@ -83,6 +83,8 @@ namespace elasticsearch_netcore.Controllers
             try
             {
                 var result = await _authorService.DeleteAuthorAsync(id);
+                if (!result)
+                    return NotFound();
                 return Ok(result);
             }
             catch (Exception ex)

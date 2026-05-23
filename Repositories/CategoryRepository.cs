@@ -200,7 +200,11 @@ namespace elasticsearch_netcore.Repositories
         {
             if (_context != null && id > 0)
             {
-                _context.Categories.Remove(new Category() { Id = id });
+                var record = await _context.Categories.FindAsync(id);
+                if (record == null)
+                    return false;
+
+                _context.Categories.Remove(record);
                 await _context.SaveChangesAsync();
                 return true;
             }

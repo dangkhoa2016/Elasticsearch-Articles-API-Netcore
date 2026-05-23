@@ -80,8 +80,7 @@ namespace elasticsearch_netcore.Services
 
         public async Task<bool> DeleteArticleAsync(long id)
         {
-            await _articleRepository.DeleteArticle(id);
-            return true;
+            return await _articleRepository.DeleteArticle(id);
         }
 
         public async Task<string> ImportAsync()
