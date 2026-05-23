@@ -171,9 +171,9 @@ namespace elasticsearch_netcore.Repositories
             if (_context != null)
             {
                 if (string.IsNullOrWhiteSpace(article?.Title))
-                    throw new ArgumentException("Title is required.", nameof(article.Title));
+                    throw new ArgumentException("Title is required.", "title");
                 if (string.IsNullOrWhiteSpace(article?.Content))
-                    throw new ArgumentException("Content is required.", nameof(article.Content));
+                    throw new ArgumentException("Content is required.", "content");
 
                 var record = new Article();
                 record.Title = article.Title;
@@ -203,9 +203,9 @@ namespace elasticsearch_netcore.Repositories
             if (_context != null && article != null && id > 0)
             {
                 if (string.IsNullOrWhiteSpace(article?.Title))
-                    throw new ArgumentException("Title is required.", nameof(article.Title));
+                    throw new ArgumentException("Title is required.", "title");
                 if (string.IsNullOrWhiteSpace(article?.Content))
-                    throw new ArgumentException("Content is required.", nameof(article.Content));
+                    throw new ArgumentException("Content is required.", "content");
 
                 var found = await _context.Articles.Include(a => a.ArticlesCategories).Include(a => a.Authorships).FirstOrDefaultAsync(a => a.Id == id);
                 if (found != null)
@@ -348,11 +348,14 @@ namespace elasticsearch_netcore.Repositories
 
         public static JObject ConvertToJObject(ArticleViewModel record, bool loadRelation = false, ForPage forPage = ForPage.All)
         {
+            if (record == null)
+                return null;
+
             JObject article = null;
             if (loadRelation)
             {
-                var categories = JArray.FromObject(record.ArticlesCategories.Select(x => x.Category));
-                var authors = JArray.FromObject(record.Authorships.Select(x => x.Author));
+                var categories = JArray.FromObject((record.ArticlesCategories ?? Array.Empty<ArticlesCategoryViewModel>()).Select(x => x.Category));
+                var authors = JArray.FromObject((record.Authorships ?? Array.Empty<AuthorshipViewModel>()).Select(x => x.Author));
                 record.ArticlesCategories = null;
                 record.Authorships = null;
 
@@ -365,8 +368,8 @@ namespace elasticsearch_netcore.Repositories
             {
                 if (forPage == ForPage.Detail)
                 {
-                    var categories = JArray.FromObject(record.ArticlesCategories.Select(x => new { category_id = x.CategoryId }));
-                    var authors = JArray.FromObject(record.Authorships.Select(x => new { author_id = x.AuthorId }));
+                    var categories = JArray.FromObject((record.ArticlesCategories ?? Array.Empty<ArticlesCategoryViewModel>()).Select(x => new { category_id = x.CategoryId }));
+                    var authors = JArray.FromObject((record.Authorships ?? Array.Empty<AuthorshipViewModel>()).Select(x => new { author_id = x.AuthorId }));
                     record.ArticlesCategories = null;
                     record.Authorships = null;
 
