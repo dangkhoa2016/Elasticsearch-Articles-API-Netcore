@@ -207,6 +207,9 @@ namespace elasticsearch_netcore.Repositories
                 if (record == null)
                     return false;
 
+                var lstAuthorships = _context.Authorships.Where(a => a.AuthorId == id).ToList();
+                _context.Authorships.RemoveRange(lstAuthorships);
+
                 _context.Authors.Remove(record);
                 await _context.SaveChangesAsync();
                 return true;

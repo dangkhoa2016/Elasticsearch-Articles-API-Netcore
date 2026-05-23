@@ -204,6 +204,9 @@ namespace elasticsearch_netcore.Repositories
                 if (record == null)
                     return false;
 
+                var lstArticlesCategories = _context.ArticlesCategories.Where(ac => ac.CategoryId == id).ToList();
+                _context.ArticlesCategories.RemoveRange(lstArticlesCategories);
+
                 _context.Categories.Remove(record);
                 await _context.SaveChangesAsync();
                 return true;
