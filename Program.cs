@@ -32,6 +32,34 @@ namespace elasticsearch_netcore
             try
             {
                 Log.Information("Starting web host");
+
+                var provider = Configuration["DatabaseProvider:Provider"] ?? "SQLite";
+                if (provider.Equals("SQLite", StringComparison.OrdinalIgnoreCase))
+                {
+                    var connStr = Configuration.GetConnectionString("DBConnectionString");
+                    if (!string.IsNullOrEmpty(connStr))
+                    {
+                        var dbPath = connStr.Replace("Data Source=", "").Split(';')[0];
+                        if (!string.IsNullOrEmpty(dbPath) && dbPath != ":memory:")
+                        {
+                            var dirPath = Path.GetDirectoryName(dbPath);
+                            if (!string.IsNullOrEmpty(dirPath) && Directory.Exists(dirPath))
+                            {
+                                var testFile = Path.Combine(dirPath, ".write_test");
+                                try
+                                {
+                                    File.WriteAllText(testFile, "");
+                                    File.Delete(testFile);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Warning(ex, "Database directory may not be writable. SQLite write operations will fail. Path: {DirPath}", dirPath);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 var host = CreateHostBuilder(args).Build();
 
                 var helper = (Helpers.Helper)host.Services.GetService(typeof(Helpers.Helper));

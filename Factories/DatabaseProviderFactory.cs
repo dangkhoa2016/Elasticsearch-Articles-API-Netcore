@@ -34,6 +34,7 @@ namespace elasticsearch_netcore.Factories
                         sqlite.CommandTimeout(commandTimeout);
                         sqlite.MigrationsAssembly("ElasticsearchArticlesApiNetcore");
                     });
+                    optionsBuilder.AddInterceptors(new SqlitePragmaInterceptor());
                     break;
 
                 case "postgresql":

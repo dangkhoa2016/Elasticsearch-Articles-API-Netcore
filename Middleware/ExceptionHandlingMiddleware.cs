@@ -1,5 +1,6 @@
 using elasticsearch_netcore.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
@@ -28,20 +29,28 @@ namespace elasticsearch_netcore.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
-                
-                var errorResponse = new ErrorResponse(
-                    "InternalServerError",
-                    "An unexpected error occurred. Please try again later.",
-                    (int)HttpStatusCode.InternalServerError
-                );
 
                 if (context.Response.HasStarted)
                 {
                     _logger.LogWarning("Response has already started, cannot write error response.");
                     throw;
                 }
-                
-                context.Response.StatusCode = errorResponse.StatusCode;
+
+                var statusCode = (int)HttpStatusCode.InternalServerError;
+                var errorCode = "InternalServerError";
+                var message = "An unexpected error occurred. Please try again later.";
+
+                if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 8)
+                {
+                    _logger.LogWarning(ex, "Database is read-only");
+                    statusCode = (int)HttpStatusCode.ServiceUnavailable;
+                    errorCode = "DatabaseReadOnly";
+                    message = "Service temporarily unavailable: database is read-only. Please try again later.";
+                }
+
+                var errorResponse = new ErrorResponse(errorCode, message, statusCode);
+
+                context.Response.StatusCode = statusCode;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
             }
