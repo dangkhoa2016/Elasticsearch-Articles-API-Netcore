@@ -23,7 +23,7 @@ namespace elasticsearch_netcore.Controllers
         [Route("favicon.png")]
         public IActionResult Favicon_png()
         {
-            var filePath = Path.Combine(_env.ContentRootPath, "klc_favicon.png");
+            var filePath = Path.Combine(_env.ContentRootPath, "favicon.png");
             return PhysicalFile(filePath, "image/png");
         }
 
@@ -31,7 +31,7 @@ namespace elasticsearch_netcore.Controllers
         [Route("favicon.ico")]
         public IActionResult Favicon_ico()
         {
-            var filePath = Path.Combine(_env.ContentRootPath, "klc_favicon.ico");
+            var filePath = Path.Combine(_env.ContentRootPath, "favicon.ico");
             return PhysicalFile(filePath, "image/x-icon");
         }
     }
